@@ -1,0 +1,165 @@
+package com.takeaway.service;
+
+import com.takeaway.dto.MenuCategoryDTO;
+import com.takeaway.dto.MenuItemDTO;
+import com.takeaway.dto.RestaurantDTO;
+import com.takeaway.entity.MenuCategory;
+import com.takeaway.entity.MenuItem;
+import com.takeaway.entity.Restaurant;
+import com.takeaway.repository.MenuCategoryRepository;
+import com.takeaway.repository.MenuItemRepository;
+import com.takeaway.repository.RestaurantRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class RestaurantService {
+
+    private final RestaurantRepository restaurantRepository;
+    private final MenuCategoryRepository menuCategoryRepository;
+    private final MenuItemRepository menuItemRepository;
+
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    public Page<RestaurantDTO> getRestaurants(Long categoryId, String keyword, String sortBy, int page, int size) {
+        Sort sort = getSort(sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<Restaurant> restaurants;
+        if (categoryId != null && keyword != null && !keyword.isEmpty()) {
+            restaurants = restaurantRepository.searchByCategoryAndKeyword(categoryId, keyword, pageable);
+        } else if (categoryId != null) {
+            restaurants = restaurantRepository.findByCategoryId(categoryId, pageable);
+        } else if (keyword != null && !keyword.isEmpty()) {
+            restaurants = restaurantRepository.searchByKeyword(keyword, pageable);
+        } else {
+            restaurants = restaurantRepository.findAll(pageable);
+        }
+
+        return restaurants.map(this::toDTO);
+    }
+
+    public List<RestaurantDTO> getFeaturedRestaurants(int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        return restaurantRepository.findByIsFeaturedTrueOrderByRatingDesc(pageable)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public RestaurantDTO getRestaurantById(Long id) {
+        Restaurant restaurant = restaurantRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("餐厅不存在"));
+        return toDTO(restaurant);
+    }
+
+    public List<MenuCategoryDTO> getMenuCategories(Long restaurantId) {
+        return menuCategoryRepository.findByRestaurantIdOrderBySortOrderAsc(restaurantId)
+                .stream()
+                .map(this::toMenuCategoryDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<MenuItemDTO> getMenuItems(Long restaurantId, Long categoryId) {
+        List<MenuItem> items;
+        if (categoryId != null) {
+            items = menuItemRepository.findAvailableByRestaurantIdAndCategoryId(restaurantId, categoryId);
+        } else {
+            items = menuItemRepository.findAvailableByRestaurantId(restaurantId);
+        }
+        return items.stream()
+                .map(this::toMenuItemDTO)
+                .collect(Collectors.toList());
+    }
+
+    private Sort getSort(String sortBy) {
+        if (sortBy == null) {
+            return Sort.by(Sort.Direction.DESC, "rating");
+        }
+        return switch (sortBy) {
+            case "distance" -> Sort.by(Sort.Direction.ASC, "distance");
+            case "deliveryTime" -> Sort.by(Sort.Direction.ASC, "deliveryTime");
+            case "minOrder" -> Sort.by(Sort.Direction.ASC, "minOrder");
+            default -> Sort.by(Sort.Direction.DESC, "rating");
+        };
+    }
+
+    private RestaurantDTO toDTO(Restaurant restaurant) {
+        RestaurantDTO dto = new RestaurantDTO();
+        dto.setId(restaurant.getId());
+        dto.setName(restaurant.getName());
+        dto.setDescription(restaurant.getDescription());
+        dto.setImage(restaurant.getImage());
+        dto.setLogo(restaurant.getLogo());
+        dto.setRating(restaurant.getRating());
+        dto.setReviewCount(restaurant.getReviewCount());
+        dto.setDeliveryTime(restaurant.getDeliveryTime());
+        dto.setDeliveryFee(restaurant.getDeliveryFee());
+        dto.setMinOrder(restaurant.getMinOrder());
+        dto.setDistance(restaurant.getDistance());
+        dto.setAddress(restaurant.getAddress());
+        dto.setPhone(restaurant.getPhone());
+        dto.setOpenTime(restaurant.getOpenTime() != null ? restaurant.getOpenTime().format(TIME_FORMATTER) : null);
+        dto.setCloseTime(restaurant.getCloseTime() != null ? restaurant.getCloseTime().format(TIME_FORMATTER) : null);
+        dto.setIsOpen(restaurant.getIsOpen());
+        dto.setIsNew(restaurant.getIsNew());
+        
+        if (restaurant.getCategory() != null) {
+            dto.setCategoryId(restaurant.getCategory().getId());
+            dto.setCategoryName(restaurant.getCategory().getName());
+        }
+        
+        if (restaurant.getTags() != null && !restaurant.getTags().isEmpty()) {
+            dto.setTags(Arrays.asList(restaurant.getTags().split(",")));
+        } else {
+            dto.setTags(Collections.emptyList());
+        }
+        
+        dto.setCreatedAt(restaurant.getCreatedAt() != null ? restaurant.getCreatedAt().format(DATETIME_FORMATTER) : null);
+        return dto;
+    }
+
+    private MenuCategoryDTO toMenuCategoryDTO(MenuCategory menuCategory) {
+        MenuCategoryDTO dto = new MenuCategoryDTO();
+        dto.setId(menuCategory.getId());
+        dto.setRestaurantId(menuCategory.getRestaurant().getId());
+        dto.setName(menuCategory.getName());
+        dto.setSortOrder(menuCategory.getSortOrder());
+        dto.setItemCount(menuItemRepository.countByMenuCategoryId(menuCategory.getId()));
+        return dto;
+    }
+
+    private MenuItemDTO toMenuItemDTO(MenuItem menuItem) {
+        MenuItemDTO dto = new MenuItemDTO();
+        dto.setId(menuItem.getId());
+        dto.setRestaurantId(menuItem.getRestaurant().getId());
+        dto.setName(menuItem.getName());
+        dto.setDescription(menuItem.getDescription());
+        dto.setPrice(menuItem.getPrice());
+        dto.setOriginalPrice(menuItem.getOriginalPrice());
+        dto.setImage(menuItem.getImage());
+        
+        if (menuItem.getMenuCategory() != null) {
+            dto.setCategoryId(menuItem.getMenuCategory().getId());
+            dto.setCategoryName(menuItem.getMenuCategory().getName());
+        }
+        
+        dto.setSales(menuItem.getSales());
+        dto.setIsHot(menuItem.getIsHot());
+        dto.setIsNew(menuItem.getIsNew());
+        dto.setIsAvailable(menuItem.getIsAvailable());
+        return dto;
+    }
+}
