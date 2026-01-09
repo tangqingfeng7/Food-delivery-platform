@@ -1,0 +1,35 @@
+# 项目开发规范
+
+## 数据规范
+- **始终使用真实的 API 数据，禁止使用模拟数据（mock data）**
+- 所有页面数据通过调用后端 API 获取
+- 在 `frontend/src/api/` 目录下创建对应的 API 文件
+- 在 `frontend/src/types/index.ts` 中定义数据类型
+
+## UI 规范
+- 不使用 Emoji，使用 lucide-react 图标库
+- 弹窗和通知使用自定义的 Toast 和 ConfirmDialog 组件，禁止使用原生 alert/confirm
+- 保持 UI 风格统一，使用 Tailwind CSS
+
+## 文档规范
+- 文档要及时更新
+
+## 语言规范
+- 代码注释和 UI 文案使用中文
+
+## 服务对接规范
+- **保证前端、后端、数据库三层架构的一致性**
+- 新增功能时，需同步更新：数据库表结构 → 后端实体/DTO → 后端 API → 前端类型定义 → 前端 API 调用
+- 修改数据库字段时，必须同步更新后端实体类和前端类型定义
+- API 接口路径和参数命名需保持前后端一致
+- 后端 Controller 层的 API 路径需与前端 `api/` 目录下的调用地址对应
+- 数据库字段变更需更新 `database/init.sql` 文件
+
+## MCP 工具规范
+- **可以使用 MCP 工具**来扩展开发能力
+- 在调用 MCP 工具前，先查阅工具的 schema/descriptor 文件了解参数要求
+- 可用的 MCP 服务器包括：
+  - `cursor-browser-extension`：浏览器交互和前端测试
+  - `user-postman_mcp_server`：API 测试和集合管理
+  - `user-chrome-devtools`：Chrome 开发者工具调试
+  - `user-mcp-server-mysql`：数据库查询操作
