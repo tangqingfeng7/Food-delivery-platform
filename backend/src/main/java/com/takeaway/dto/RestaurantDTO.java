@@ -24,6 +24,8 @@ public class RestaurantDTO {
     private BigDecimal minOrder;
     private BigDecimal distance;
     private String address;
+    private BigDecimal latitude;
+    private BigDecimal longitude;
     private String phone;
     private String openTime;
     private String closeTime;

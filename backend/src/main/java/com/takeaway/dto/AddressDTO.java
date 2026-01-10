@@ -22,6 +22,10 @@ public class AddressDTO {
 
     private String address;
 
+    private Double latitude;
+
+    private Double longitude;
+
     private Boolean isDefault;
 
     private String createdAt;

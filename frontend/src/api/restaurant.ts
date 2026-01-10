@@ -20,8 +20,13 @@ export const getFeaturedRestaurants = (limit?: number) => {
 }
 
 // 获取餐厅详情
-export const getRestaurantById = (id: number) => {
-  return request.get<ApiResponse<Restaurant>>(`/restaurants/${id}`)
+export const getRestaurantById = (id: number, userLat?: number, userLng?: number) => {
+  return request.get<ApiResponse<Restaurant>>(`/restaurants/${id}`, {
+    params: {
+      userLat,
+      userLng,
+    },
+  })
 }
 
 // 获取餐厅菜品分类

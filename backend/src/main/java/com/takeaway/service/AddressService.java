@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -66,6 +67,8 @@ public class AddressService {
         address.setName(request.getName());
         address.setPhone(request.getPhone());
         address.setAddress(request.getAddress());
+        address.setLatitude(request.getLatitude() != null ? BigDecimal.valueOf(request.getLatitude()) : null);
+        address.setLongitude(request.getLongitude() != null ? BigDecimal.valueOf(request.getLongitude()) : null);
         address.setIsDefault(shouldBeDefault);
 
         Address saved = addressRepository.save(address);
@@ -88,6 +91,12 @@ public class AddressService {
         }
         if (request.getAddress() != null) {
             address.setAddress(request.getAddress());
+        }
+        if (request.getLatitude() != null) {
+            address.setLatitude(BigDecimal.valueOf(request.getLatitude()));
+        }
+        if (request.getLongitude() != null) {
+            address.setLongitude(BigDecimal.valueOf(request.getLongitude()));
         }
         if (Boolean.TRUE.equals(request.getIsDefault()) && !address.getIsDefault()) {
             addressRepository.clearDefaultByUserId(userId);
@@ -147,6 +156,8 @@ public class AddressService {
         dto.setName(address.getName());
         dto.setPhone(address.getPhone());
         dto.setAddress(address.getAddress());
+        dto.setLatitude(address.getLatitude() != null ? address.getLatitude().doubleValue() : null);
+        dto.setLongitude(address.getLongitude() != null ? address.getLongitude().doubleValue() : null);
         dto.setIsDefault(address.getIsDefault());
         dto.setCreatedAt(address.getCreatedAt() != null ? address.getCreatedAt().format(DATETIME_FORMATTER) : null);
         return dto;

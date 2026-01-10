@@ -20,6 +20,8 @@ export interface Address {
   name: string
   phone: string
   address: string
+  latitude: number | null
+  longitude: number | null
   isDefault: boolean
   createdAt: string
 }
@@ -47,6 +49,8 @@ export interface Restaurant {
   minOrder: number
   distance: number
   address: string
+  latitude: number | null
+  longitude: number | null
   phone: string
   openTime: string
   closeTime: string
@@ -199,6 +203,8 @@ export interface CreateRestaurantRequest {
   deliveryFee?: number
   minOrder?: number
   address: string
+  latitude?: number
+  longitude?: number
   phone: string
   openTime?: string
   closeTime?: string
@@ -216,6 +222,8 @@ export interface UpdateRestaurantRequest {
   deliveryFee?: number
   minOrder?: number
   address?: string
+  latitude?: number
+  longitude?: number
   phone?: string
   openTime?: string
   closeTime?: string

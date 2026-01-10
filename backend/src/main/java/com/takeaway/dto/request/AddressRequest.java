@@ -14,5 +14,9 @@ public class AddressRequest {
 
     private String address;
 
+    private Double latitude;
+
+    private Double longitude;
+
     private Boolean isDefault;
 }

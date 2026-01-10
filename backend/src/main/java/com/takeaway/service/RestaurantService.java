@@ -16,6 +16,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
@@ -60,9 +62,41 @@ public class RestaurantService {
     }
 
     public RestaurantDTO getRestaurantById(Long id) {
+        return getRestaurantById(id, null, null);
+    }
+
+    public RestaurantDTO getRestaurantById(Long id, Double userLat, Double userLng) {
         Restaurant restaurant = restaurantRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("餐厅不存在"));
-        return toDTO(restaurant);
+        RestaurantDTO dto = toDTO(restaurant);
+        
+        // 如果提供了用户位置，计算真实距离
+        if (userLat != null && userLng != null && 
+            restaurant.getLatitude() != null && restaurant.getLongitude() != null) {
+            double distance = calculateDistance(
+                userLat, userLng,
+                restaurant.getLatitude().doubleValue(), restaurant.getLongitude().doubleValue()
+            );
+            // 保留一位小数
+            dto.setDistance(BigDecimal.valueOf(distance).setScale(1, RoundingMode.HALF_UP));
+        }
+        
+        return dto;
+    }
+
+    /**
+     * 计算两点之间的距离（公里）
+     * 使用 Haversine 公式
+     */
+    private double calculateDistance(double lat1, double lng1, double lat2, double lng2) {
+        final double R = 6371; // 地球半径（公里）
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                   Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                   Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
     }
 
     public List<MenuCategoryDTO> getMenuCategories(Long restaurantId) {
@@ -110,6 +144,8 @@ public class RestaurantService {
         dto.setMinOrder(restaurant.getMinOrder());
         dto.setDistance(restaurant.getDistance());
         dto.setAddress(restaurant.getAddress());
+        dto.setLatitude(restaurant.getLatitude());
+        dto.setLongitude(restaurant.getLongitude());
         dto.setPhone(restaurant.getPhone());
         dto.setOpenTime(restaurant.getOpenTime() != null ? restaurant.getOpenTime().format(TIME_FORMATTER) : null);
         dto.setCloseTime(restaurant.getCloseTime() != null ? restaurant.getCloseTime().format(TIME_FORMATTER) : null);

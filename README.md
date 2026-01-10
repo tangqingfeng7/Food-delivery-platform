@@ -119,7 +119,7 @@ npm run dev
 - 购物车管理
 - 订单创建和管理
 - 收藏餐厅
-- 收货地址管理
+- 收货地址管理（支持地图定位选择）
 - 消息通知（系统通知、订单通知、优惠活动）
 - 响应式设计
 - 高级动画效果
@@ -142,6 +142,22 @@ spring:
     url: jdbc:mysql://localhost:3306/takeaway_db
     username: root
     password: your_password
+```
+
+### 高德地图配置（地址定位功能）
+
+收货地址功能支持地图定位选择，需要配置高德地图 API Key：
+
+1. 访问 [高德开放平台](https://lbs.amap.com/) 注册开发者账号
+2. 创建应用，获取 Web 端 JS API 的 Key
+3. 在应用管理中配置安全密钥
+4. 修改 `frontend/src/config/map.ts`：
+
+```typescript
+// 填入您的 Key
+export const AMAP_KEY = 'your_amap_key'
+// 填入您的安全密钥
+export const AMAP_SECURITY_CODE = 'your_security_code'
 ```
 
 ## License

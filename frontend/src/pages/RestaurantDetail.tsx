@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Star, Clock, MapPin, Phone, Plus, Minus, ShoppingCart, Heart, Share2, Loader2 } from 'lucide-react'
@@ -9,6 +9,7 @@ import { addFavorite, removeFavorite, checkFavorite } from '../api/favorite'
 import { getImageUrl } from '../api/upload'
 import { useCartStore } from '../store/useCartStore'
 import { useUserStore } from '../store/useUserStore'
+import { useLocationStore, calculateDistance } from '../store/useLocationStore'
 import { confirm } from '../store/useConfirmStore'
 import { toast } from '../store/useToastStore'
 import { Restaurant, MenuItem, MenuCategory } from '../types'
@@ -26,6 +27,12 @@ const RestaurantDetail = () => {
 
   const { isLoggedIn } = useUserStore()
   const { 
+    latitude: userLat, 
+    longitude: userLng, 
+    isLocated, 
+    getCurrentPosition 
+  } = useLocationStore()
+  const { 
     addItem, 
     removeItem, 
     getItemQuantity, 
@@ -34,11 +41,16 @@ const RestaurantDetail = () => {
     restaurantId: cartRestaurantId 
   } = useCartStore()
 
+  // 获取用户位置
+  useEffect(() => {
+    getCurrentPosition()
+  }, [])
+
   useEffect(() => {
     if (id) {
       fetchRestaurantData(Number(id))
     }
-  }, [id])
+  }, [id, userLat, userLng])
 
   // 检查是否已收藏
   useEffect(() => {
@@ -57,7 +69,11 @@ const RestaurantDetail = () => {
     try {
       setLoading(true)
       const [restaurantRes, categoriesRes] = await Promise.all([
-        getRestaurantById(restaurantId),
+        getRestaurantById(
+          restaurantId,
+          userLat ?? undefined,
+          userLng ?? undefined
+        ),
         getMenuCategories(restaurantId),
       ])
       
@@ -145,6 +161,26 @@ const RestaurantDetail = () => {
     navigate('/cart')
   }
 
+  // 实时计算距离
+  const realDistance = useMemo(() => {
+    if (!restaurant) return null
+    
+    // 如果有用户位置和餐厅位置，计算真实距离
+    if (isLocated && userLat && userLng && 
+        restaurant.latitude && restaurant.longitude) {
+      const distance = calculateDistance(
+        userLat, 
+        userLng, 
+        restaurant.latitude, 
+        restaurant.longitude
+      )
+      return Math.round(distance * 10) / 10 // 保留一位小数
+    }
+    
+    // 否则使用餐厅默认距离
+    return restaurant.distance
+  }, [restaurant, userLat, userLng, isLocated])
+
   const totalItems = getTotalCount()
   const totalPrice = getTotalPrice()
 
@@ -207,7 +243,7 @@ const RestaurantDetail = () => {
                     </div>
                     <div className="flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
-                      <span>{restaurant.distance}km</span>
+                      <span>{realDistance ?? restaurant.distance}km</span>
                     </div>
                   </div>
                 </div>

@@ -39,9 +39,12 @@ public class RestaurantController {
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<RestaurantDTO> getRestaurantById(@PathVariable Long id) {
+    public ApiResponse<RestaurantDTO> getRestaurantById(
+            @PathVariable Long id,
+            @RequestParam(required = false) Double userLat,
+            @RequestParam(required = false) Double userLng) {
         try {
-            RestaurantDTO restaurant = restaurantService.getRestaurantById(id);
+            RestaurantDTO restaurant = restaurantService.getRestaurantById(id, userLat, userLng);
             return ApiResponse.success(restaurant);
         } catch (Exception e) {
             return ApiResponse.error(404, e.getMessage());

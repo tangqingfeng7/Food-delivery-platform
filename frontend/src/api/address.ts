@@ -11,6 +11,8 @@ export const addAddress = (data: {
   name: string
   phone: string
   address: string
+  latitude?: number | null
+  longitude?: number | null
   isDefault?: boolean
 }) => {
   return request.post<ApiResponse<Address>>('/addresses', data)
@@ -21,6 +23,8 @@ export const updateAddress = (id: number, data: {
   name?: string
   phone?: string
   address?: string
+  latitude?: number | null
+  longitude?: number | null
   isDefault?: boolean
 }) => {
   return request.put<ApiResponse<Address>>(`/addresses/${id}`, data)

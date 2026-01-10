@@ -27,6 +27,10 @@ public class CreateRestaurantRequest {
     @NotBlank(message = "店铺地址不能为空")
     private String address;
 
+    private BigDecimal latitude;
+
+    private BigDecimal longitude;
+
     @NotBlank(message = "联系电话不能为空")
     private String phone;
 

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, MapPin, Plus, Edit2, Trash2, Check, Loader2 } from 'lucide-react'
+import { ArrowLeft, MapPin, Plus, Edit2, Trash2, Check, Loader2, Map } from 'lucide-react'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
+import MapPicker from '../components/MapPicker'
 import { useUserStore } from '../store/useUserStore'
 import { getAddresses, addAddress, updateAddress, deleteAddress, setDefaultAddress } from '../api/address'
 import { Address } from '../types'
@@ -23,8 +24,11 @@ const Addresses = () => {
     name: '',
     phone: '',
     address: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
     isDefault: false,
   })
+  const [showMapPicker, setShowMapPicker] = useState(false)
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -91,10 +95,23 @@ const Addresses = () => {
       name: address.name,
       phone: address.phone,
       address: address.address,
+      latitude: address.latitude,
+      longitude: address.longitude,
       isDefault: address.isDefault,
     })
     setEditingId(address.id)
     setShowForm(true)
+  }
+
+  // 处理地图选择确认
+  const handleMapConfirm = (location: { lng: number; lat: number; address: string; name?: string }) => {
+    setFormData(prev => ({
+      ...prev,
+      address: location.address,
+      latitude: location.lat,
+      longitude: location.lng,
+    }))
+    setShowMapPicker(false)
   }
 
   const handleDelete = async (id: number) => {
@@ -134,7 +151,7 @@ const Addresses = () => {
   }
 
   const resetForm = () => {
-    setFormData({ name: '', phone: '', address: '', isDefault: false })
+    setFormData({ name: '', phone: '', address: '', latitude: null, longitude: null, isDefault: false })
     setEditingId(null)
     setShowForm(false)
   }
@@ -205,12 +222,27 @@ const Addresses = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       详细地址
                     </label>
-                    <textarea
-                      placeholder="请输入详细地址"
-                      value={formData.address}
-                      onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 outline-none transition-colors resize-none min-h-[80px]"
-                    />
+                    <div className="relative">
+                      <textarea
+                        placeholder="请输入详细地址或点击地图选择"
+                        value={formData.address}
+                        onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                        className="w-full px-4 py-3 pr-24 rounded-xl border-2 border-gray-200 focus:border-orange-500 outline-none transition-colors resize-none min-h-[80px]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowMapPicker(true)}
+                        className="absolute right-3 top-3 px-3 py-1.5 bg-orange-500 text-white rounded-lg text-sm flex items-center gap-1 hover:bg-orange-600 transition-colors"
+                      >
+                        <Map className="w-4 h-4" />
+                        地图选择
+                      </button>
+                    </div>
+                    {formData.latitude && formData.longitude && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        已定位: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+                      </p>
+                    )}
                   </div>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -278,6 +310,12 @@ const Addresses = () => {
                             默认
                           </span>
                         )}
+                        {address.latitude && address.longitude && (
+                          <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-600 text-xs flex items-center gap-1">
+                            <Map className="w-3 h-3" />
+                            已定位
+                          </span>
+                        )}
                       </div>
                       <p className="text-gray-600 text-sm">{address.address}</p>
                     </div>
@@ -311,6 +349,17 @@ const Addresses = () => {
           </motion.div>
         )}
       </div>
+
+      {/* 地图选择器 */}
+      <MapPicker
+        visible={showMapPicker}
+        onClose={() => setShowMapPicker(false)}
+        onConfirm={handleMapConfirm}
+        initialLocation={formData.latitude && formData.longitude ? {
+          lat: formData.latitude,
+          lng: formData.longitude,
+        } : undefined}
+      />
     </div>
   )
 }

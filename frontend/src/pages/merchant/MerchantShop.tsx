@@ -10,10 +10,12 @@ import {
   ImagePlus,
   ToggleLeft,
   ToggleRight,
+  Navigation,
 } from 'lucide-react'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import ImageUpload from '../../components/ImageUpload'
+import MapPicker from '../../components/MapPicker'
 import {
   getMyRestaurant,
   createRestaurant,
@@ -30,6 +32,7 @@ const MerchantShop = () => {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [isNew, setIsNew] = useState(false)
+  const [showMapPicker, setShowMapPicker] = useState(false)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -40,6 +43,8 @@ const MerchantShop = () => {
     deliveryFee: '0',
     minOrder: '20',
     address: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
     phone: '',
     openTime: '09:00',
     closeTime: '22:00',
@@ -76,6 +81,8 @@ const MerchantShop = () => {
           deliveryFee: String(r.deliveryFee || 0),
           minOrder: String(r.minOrder || 20),
           address: r.address || '',
+          latitude: r.latitude || null,
+          longitude: r.longitude || null,
           phone: r.phone || '',
           openTime: r.openTime || '09:00',
           closeTime: r.closeTime || '22:00',
@@ -120,6 +127,8 @@ const MerchantShop = () => {
           deliveryFee: formData.deliveryFee ? parseFloat(formData.deliveryFee) : undefined,
           minOrder: formData.minOrder ? parseFloat(formData.minOrder) : undefined,
           address: formData.address,
+          latitude: formData.latitude || undefined,
+          longitude: formData.longitude || undefined,
           phone: formData.phone,
           openTime: formData.openTime || undefined,
           closeTime: formData.closeTime || undefined,
@@ -142,6 +151,8 @@ const MerchantShop = () => {
           deliveryFee: formData.deliveryFee ? parseFloat(formData.deliveryFee) : undefined,
           minOrder: formData.minOrder ? parseFloat(formData.minOrder) : undefined,
           address: formData.address,
+          latitude: formData.latitude || undefined,
+          longitude: formData.longitude || undefined,
           phone: formData.phone,
           openTime: formData.openTime || undefined,
           closeTime: formData.closeTime || undefined,
@@ -332,17 +343,33 @@ const MerchantShop = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     店铺地址 <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      placeholder="请输入详细地址"
-                      className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
-                    />
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleChange}
+                        placeholder="请输入详细地址或在地图上选择"
+                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowMapPicker(true)}
+                      className="px-4 py-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors flex items-center gap-2 whitespace-nowrap"
+                    >
+                      <Navigation className="w-5 h-5" />
+                      地图选点
+                    </button>
                   </div>
+                  {formData.latitude && formData.longitude && (
+                    <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />
+                      已选择位置: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -463,6 +490,26 @@ const MerchantShop = () => {
           </Card>
         </motion.div>
       </form>
+
+      {/* 地图选择器 */}
+      <MapPicker
+        visible={showMapPicker}
+        onClose={() => setShowMapPicker(false)}
+        onConfirm={(location: { lng: number; lat: number; address: string }) => {
+          setFormData(prev => ({
+            ...prev,
+            address: location.address,
+            latitude: location.lat,
+            longitude: location.lng,
+          }))
+          setShowMapPicker(false)
+        }}
+        initialLocation={
+          formData.latitude && formData.longitude
+            ? { lng: formData.longitude, lat: formData.latitude }
+            : undefined
+        }
+      />
     </div>
   )
 }

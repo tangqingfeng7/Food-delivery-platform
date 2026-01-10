@@ -69,6 +69,8 @@ public class MerchantService {
         restaurant.setDeliveryFee(request.getDeliveryFee() != null ? request.getDeliveryFee() : BigDecimal.ZERO);
         restaurant.setMinOrder(request.getMinOrder() != null ? request.getMinOrder() : BigDecimal.ZERO);
         restaurant.setAddress(request.getAddress());
+        restaurant.setLatitude(request.getLatitude());
+        restaurant.setLongitude(request.getLongitude());
         restaurant.setPhone(request.getPhone());
         restaurant.setCategory(category);
         restaurant.setOwner(owner);
@@ -120,6 +122,12 @@ public class MerchantService {
         }
         if (request.getAddress() != null) {
             restaurant.setAddress(request.getAddress());
+        }
+        if (request.getLatitude() != null) {
+            restaurant.setLatitude(request.getLatitude());
+        }
+        if (request.getLongitude() != null) {
+            restaurant.setLongitude(request.getLongitude());
         }
         if (request.getPhone() != null) {
             restaurant.setPhone(request.getPhone());
@@ -584,6 +592,8 @@ public class MerchantService {
         dto.setMinOrder(restaurant.getMinOrder());
         dto.setDistance(restaurant.getDistance());
         dto.setAddress(restaurant.getAddress());
+        dto.setLatitude(restaurant.getLatitude());
+        dto.setLongitude(restaurant.getLongitude());
         dto.setPhone(restaurant.getPhone());
         dto.setOpenTime(restaurant.getOpenTime() != null ? restaurant.getOpenTime().format(TIME_FORMATTER) : null);
         dto.setCloseTime(restaurant.getCloseTime() != null ? restaurant.getCloseTime().format(TIME_FORMATTER) : null);

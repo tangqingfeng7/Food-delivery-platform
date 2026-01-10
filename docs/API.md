@@ -431,6 +431,8 @@ Authorization: Bearer <token>
         "minOrder": 20.00,
         "distance": 1.2,
         "address": "北京市朝阳区建国路88号",
+        "latitude": 39.9087243,
+        "longitude": 116.4550507,
         "phone": "010-88888001",
         "openTime": "10:00",
         "closeTime": "22:00",
@@ -491,6 +493,15 @@ Authorization: Bearer <token>
 |------|------|------|
 | id | number | 餐厅ID |
 
+**查询参数**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| userLat | number | 否 | 用户纬度，用于计算真实距离 |
+| userLng | number | 否 | 用户经度，用于计算真实距离 |
+
+> 当提供用户位置参数时，返回的 `distance` 字段将是根据用户位置和餐厅位置使用 Haversine 公式计算的真实距离（公里）。
+
 **响应示例**
 
 ```json
@@ -510,6 +521,8 @@ Authorization: Bearer <token>
     "minOrder": 20.00,
     "distance": 1.2,
     "address": "北京市朝阳区建国路88号",
+    "latitude": 39.9087243,
+    "longitude": 116.4550507,
     "phone": "010-88888001",
     "openTime": "10:00",
     "closeTime": "22:00",
@@ -939,6 +952,8 @@ Authorization: Bearer <token>
       "name": "张三",
       "phone": "13800138001",
       "address": "北京市朝阳区建国路88号",
+      "latitude": 39.9087243,
+      "longitude": 116.4550507,
       "isDefault": true,
       "createdAt": "2024-01-01 12:00:00"
     }
@@ -970,6 +985,8 @@ Authorization: Bearer <token>
     "name": "张三",
     "phone": "13800138001",
     "address": "北京市朝阳区建国路88号",
+    "latitude": 39.9087243,
+    "longitude": 116.4550507,
     "isDefault": true,
     "createdAt": "2024-01-01 12:00:00"
   }
@@ -995,6 +1012,8 @@ Authorization: Bearer <token>
 | name | string | 是 | 联系人姓名 |
 | phone | string | 是 | 联系电话 |
 | address | string | 是 | 详细地址 |
+| latitude | number | 否 | 纬度（通过地图选择获取） |
+| longitude | number | 否 | 经度（通过地图选择获取） |
 | isDefault | boolean | 否 | 是否设为默认地址 |
 
 **请求示例**
@@ -1004,6 +1023,8 @@ Authorization: Bearer <token>
   "name": "张三",
   "phone": "13800138001",
   "address": "北京市朝阳区建国路88号",
+  "latitude": 39.9087243,
+  "longitude": 116.4550507,
   "isDefault": true
 }
 ```
@@ -1020,6 +1041,8 @@ Authorization: Bearer <token>
     "name": "张三",
     "phone": "13800138001",
     "address": "北京市朝阳区建国路88号",
+    "latitude": 39.9087243,
+    "longitude": 116.4550507,
     "isDefault": true,
     "createdAt": "2024-01-01 12:00:00"
   }
@@ -1051,6 +1074,8 @@ Authorization: Bearer <token>
 | name | string | 否 | 联系人姓名 |
 | phone | string | 否 | 联系电话 |
 | address | string | 否 | 详细地址 |
+| latitude | number | 否 | 纬度（通过地图选择获取） |
+| longitude | number | 否 | 经度（通过地图选择获取） |
 | isDefault | boolean | 否 | 是否设为默认地址 |
 
 **请求示例**
@@ -1058,7 +1083,9 @@ Authorization: Bearer <token>
 ```json
 {
   "name": "李四",
-  "phone": "13900139001"
+  "phone": "13900139001",
+  "latitude": 39.9087243,
+  "longitude": 116.4550507
 }
 ```
 
@@ -1120,6 +1147,8 @@ Authorization: Bearer <token>
     "name": "张三",
     "phone": "13800138001",
     "address": "北京市朝阳区建国路88号",
+    "latitude": 39.9087243,
+    "longitude": 116.4550507,
     "isDefault": true,
     "createdAt": "2024-01-01 12:00:00"
   }
@@ -1398,6 +1427,8 @@ Authorization: Bearer <token>
     "deliveryFee": 5.00,
     "minOrder": 20.00,
     "address": "北京市朝阳区xxx",
+    "latitude": 39.9087243,
+    "longitude": 116.4550507,
     "phone": "010-12345678",
     "openTime": "09:00",
     "closeTime": "22:00",
@@ -1434,6 +1465,8 @@ Authorization: Bearer <token>
 | deliveryFee | number | 否 | 配送费 |
 | minOrder | number | 否 | 起送价 |
 | address | string | 是 | 店铺地址 |
+| latitude | number | 否 | 店铺纬度 |
+| longitude | number | 否 | 店铺经度 |
 | phone | string | 是 | 联系电话 |
 | openTime | string | 否 | 开始营业时间 |
 | closeTime | string | 否 | 结束营业时间 |
