@@ -176,6 +176,52 @@ export interface Notification {
   createdAt: string
 }
 
+// ==================== 评价相关类型 ====================
+
+// 评价类型
+export interface Review {
+  id: number
+  orderId: number
+  userId: number
+  username: string
+  userAvatar: string | null
+  restaurantId: number
+  tasteRating: number
+  packagingRating: number
+  deliveryRating: number
+  overallRating: number
+  content: string | null
+  images: string[]
+  isAnonymous: boolean
+  likeCount: number
+  isLiked: boolean
+  replyContent: string | null
+  replyTime: string | null
+  createdAt: string
+  orderItems: OrderItem[]
+}
+
+// 创建评价请求类型
+export interface CreateReviewRequest {
+  orderId: number
+  tasteRating: number
+  packagingRating: number
+  deliveryRating: number
+  content?: string
+  images?: string[]
+  isAnonymous?: boolean
+}
+
+// 评价统计类型
+export interface ReviewStats {
+  totalReviews: number
+  averageRating: number
+  avgTasteRating: number
+  avgPackagingRating: number
+  avgDeliveryRating: number
+  ratingDistribution: Record<string, number>
+}
+
 // ==================== 商家相关类型 ====================
 
 // 商家统计数据类型

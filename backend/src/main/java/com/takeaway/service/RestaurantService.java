@@ -36,6 +36,10 @@ public class RestaurantService {
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public Page<RestaurantDTO> getRestaurants(Long categoryId, String keyword, String sortBy, int page, int size) {
+        return getRestaurants(categoryId, keyword, sortBy, page, size, null, null);
+    }
+
+    public Page<RestaurantDTO> getRestaurants(Long categoryId, String keyword, String sortBy, int page, int size, Double userLat, Double userLng) {
         Sort sort = getSort(sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
@@ -50,14 +54,18 @@ public class RestaurantService {
             restaurants = restaurantRepository.findAll(pageable);
         }
 
-        return restaurants.map(this::toDTO);
+        return restaurants.map(restaurant -> toDTOWithLocation(restaurant, userLat, userLng));
     }
 
     public List<RestaurantDTO> getFeaturedRestaurants(int limit) {
+        return getFeaturedRestaurants(limit, null, null);
+    }
+
+    public List<RestaurantDTO> getFeaturedRestaurants(int limit, Double userLat, Double userLng) {
         Pageable pageable = PageRequest.of(0, limit);
         return restaurantRepository.findByIsFeaturedTrueOrderByRatingDesc(pageable)
                 .stream()
-                .map(this::toDTO)
+                .map(restaurant -> toDTOWithLocation(restaurant, userLat, userLng))
                 .collect(Collectors.toList());
     }
 
@@ -70,7 +78,7 @@ public class RestaurantService {
                 .orElseThrow(() -> new RuntimeException("餐厅不存在"));
         RestaurantDTO dto = toDTO(restaurant);
         
-        // 如果提供了用户位置，计算真实距离
+        // 如果提供了用户位置，计算距离和配送时间
         if (userLat != null && userLng != null && 
             restaurant.getLatitude() != null && restaurant.getLongitude() != null) {
             double distance = calculateDistance(
@@ -79,9 +87,30 @@ public class RestaurantService {
             );
             // 保留一位小数
             dto.setDistance(BigDecimal.valueOf(distance).setScale(1, RoundingMode.HALF_UP));
+            // 根据距离计算配送时间
+            dto.setDeliveryTime(calculateDeliveryTime(distance));
         }
         
         return dto;
+    }
+
+    /**
+     * 根据距离计算预计送达时间
+     * 公式：当前时间 + 基础准备时间 + 距离 * 每公里配送时间
+     * @param distance 距离（公里）
+     * @return 预计送达时间字符串，如 "12:30"
+     */
+    private String calculateDeliveryTime(double distance) {
+        final int BASE_PREP_TIME = 15; // 基础准备时间（分钟）
+        final int TIME_PER_KM = 3;     // 每公里配送时间（分钟）
+        
+        int totalMinutes = BASE_PREP_TIME + (int) Math.ceil(distance * TIME_PER_KM);
+        
+        // 计算预计送达时间
+        java.time.LocalTime now = java.time.LocalTime.now();
+        java.time.LocalTime arrivalTime = now.plusMinutes(totalMinutes);
+        
+        return arrivalTime.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
     }
 
     /**
@@ -118,6 +147,15 @@ public class RestaurantService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 获取单个菜品详情
+     */
+    public MenuItemDTO getMenuItemById(Long menuItemId) {
+        MenuItem menuItem = menuItemRepository.findById(menuItemId)
+                .orElseThrow(() -> new RuntimeException("菜品不存在"));
+        return toMenuItemDTO(menuItem);
+    }
+
     private Sort getSort(String sortBy) {
         if (sortBy == null) {
             return Sort.by(Sort.Direction.DESC, "rating");
@@ -131,6 +169,13 @@ public class RestaurantService {
     }
 
     private RestaurantDTO toDTO(Restaurant restaurant) {
+        return toDTOWithLocation(restaurant, null, null);
+    }
+
+    /**
+     * 将餐厅实体转换为DTO，并根据用户位置计算距离和配送时间
+     */
+    private RestaurantDTO toDTOWithLocation(Restaurant restaurant, Double userLat, Double userLng) {
         RestaurantDTO dto = new RestaurantDTO();
         dto.setId(restaurant.getId());
         dto.setName(restaurant.getName());
@@ -164,6 +209,18 @@ public class RestaurantService {
         }
         
         dto.setCreatedAt(restaurant.getCreatedAt() != null ? restaurant.getCreatedAt().format(DATETIME_FORMATTER) : null);
+
+        // 如果提供了用户位置，计算真实距离和配送时间
+        if (userLat != null && userLng != null && 
+            restaurant.getLatitude() != null && restaurant.getLongitude() != null) {
+            double distance = calculateDistance(
+                userLat, userLng,
+                restaurant.getLatitude().doubleValue(), restaurant.getLongitude().doubleValue()
+            );
+            dto.setDistance(BigDecimal.valueOf(distance).setScale(1, RoundingMode.HALF_UP));
+            dto.setDeliveryTime(calculateDeliveryTime(distance));
+        }
+
         return dto;
     }
 

@@ -409,6 +409,10 @@ Authorization: Bearer <token>
 | sortBy | string | 否 | rating | 排序方式: rating/distance/deliveryTime/minOrder |
 | page | number | 否 | 0 | 页码 (从0开始) |
 | size | number | 否 | 12 | 每页数量 |
+| userLat | number | 否 | - | 用户纬度，用于计算真实距离和配送时间 |
+| userLng | number | 否 | - | 用户经度，用于计算真实距离和配送时间 |
+
+> 当提供用户位置参数时，返回的 `distance` 和 `deliveryTime` 字段将根据用户与餐厅的距离动态计算。
 
 **响应示例**
 
@@ -463,6 +467,10 @@ Authorization: Bearer <token>
 | 参数 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|------|--------|------|
 | limit | number | 否 | 6 | 返回数量 |
+| userLat | number | 否 | - | 用户纬度，用于计算真实距离和配送时间 |
+| userLng | number | 否 | - | 用户经度，用于计算真实距离和配送时间 |
+
+> 当提供用户位置参数时，返回的 `distance` 和 `deliveryTime` 字段将根据用户与餐厅的距离动态计算。
 
 **响应示例**
 
@@ -497,10 +505,12 @@ Authorization: Bearer <token>
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| userLat | number | 否 | 用户纬度，用于计算真实距离 |
-| userLng | number | 否 | 用户经度，用于计算真实距离 |
+| userLat | number | 否 | 用户纬度，用于计算真实距离和配送时间 |
+| userLng | number | 否 | 用户经度，用于计算真实距离和配送时间 |
 
-> 当提供用户位置参数时，返回的 `distance` 字段将是根据用户位置和餐厅位置使用 Haversine 公式计算的真实距离（公里）。
+> 当提供用户位置参数时：
+> - `distance` 字段将是根据用户位置和餐厅位置使用 Haversine 公式计算的真实距离（公里）
+> - `deliveryTime` 字段将返回预计送达时间（如 "12:30"），计算公式：当前时间 + 15分钟（准备时间）+ 距离 × 3分钟/公里
 
 **响应示例**
 
@@ -614,6 +624,42 @@ Authorization: Bearer <token>
       "isAvailable": true
     }
   ]
+}
+```
+
+---
+
+### 获取单个菜品详情
+
+**GET** `/restaurants/menu-items/{menuItemId}`
+
+**路径参数**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| menuItemId | number | 菜品ID |
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "restaurantId": 1,
+    "name": "老北京炸酱面",
+    "description": "精选黄酱，手工面条，配以黄瓜丝、萝卜丝、豆芽等多种菜码",
+    "price": 28.00,
+    "originalPrice": 35.00,
+    "image": "https://images.unsplash.com/...",
+    "categoryId": 1,
+    "categoryName": "推荐",
+    "sales": 999,
+    "isHot": true,
+    "isNew": false,
+    "isAvailable": true
+  }
 }
 ```
 
@@ -1879,6 +1925,525 @@ const useOrderWebSocket = (userId: number, onMessage: (data: any) => void) => {
   }, [userId, onMessage])
 }
 ```
+
+---
+
+## 评价接口
+
+### 提交评价
+
+**POST** `/reviews`
+
+> 需要认证，仅已完成订单可评价
+
+**请求头**
+
+```
+Authorization: Bearer <token>
+```
+
+**请求参数**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| orderId | number | 是 | 订单ID |
+| tasteRating | number | 是 | 口味评分 1-5 |
+| packagingRating | number | 是 | 包装评分 1-5 |
+| deliveryRating | number | 是 | 配送评分 1-5 |
+| content | string | 否 | 评价内容 |
+| images | string[] | 否 | 评价图片URL数组 |
+| isAnonymous | boolean | 否 | 是否匿名，默认false |
+
+**请求示例**
+
+```json
+{
+  "orderId": 1,
+  "tasteRating": 5,
+  "packagingRating": 4,
+  "deliveryRating": 5,
+  "content": "味道很好，配送也很快！",
+  "images": ["/uploads/review1.jpg"],
+  "isAnonymous": false
+}
+```
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "评价提交成功",
+  "data": {
+    "id": 1,
+    "orderId": 1,
+    "userId": 1,
+    "username": "张三",
+    "userAvatar": "/uploads/avatar.jpg",
+    "restaurantId": 1,
+    "tasteRating": 5,
+    "packagingRating": 4,
+    "deliveryRating": 5,
+    "overallRating": 4.7,
+    "content": "味道很好，配送也很快！",
+    "images": ["/uploads/review1.jpg"],
+    "isAnonymous": false,
+    "likeCount": 0,
+    "isLiked": false,
+    "replyContent": null,
+    "replyTime": null,
+    "createdAt": "2024-01-15T12:30:00",
+    "orderItems": [
+      {
+        "id": 1,
+        "menuItemId": 1,
+        "menuItemName": "老北京炸酱面",
+        "menuItemImage": "/uploads/menu1.jpg",
+        "price": 28.00,
+        "quantity": 2
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 获取餐厅评价列表
+
+**GET** `/restaurants/{restaurantId}/reviews`
+
+**路径参数**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| restaurantId | number | 餐厅ID |
+
+**查询参数**
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| page | number | 否 | 0 | 页码 |
+| size | number | 否 | 10 | 每页数量 |
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "content": [
+      {
+        "id": 1,
+        "orderId": 1,
+        "userId": 1,
+        "username": "张三",
+        "userAvatar": "/uploads/avatar.jpg",
+        "restaurantId": 1,
+        "tasteRating": 5,
+        "packagingRating": 4,
+        "deliveryRating": 5,
+        "overallRating": 4.7,
+        "content": "味道很好，配送也很快！",
+        "images": ["/uploads/review1.jpg"],
+        "isAnonymous": false,
+        "likeCount": 10,
+        "isLiked": true,
+        "replyContent": "感谢您的好评！",
+        "replyTime": "2024-01-15T14:00:00",
+        "createdAt": "2024-01-15T12:30:00",
+        "orderItems": [
+          {
+            "id": 1,
+            "menuItemId": 1,
+            "menuItemName": "老北京炸酱面",
+            "menuItemImage": "/uploads/menu1.jpg",
+            "price": 28.00,
+            "quantity": 2
+          },
+          {
+            "id": 2,
+            "menuItemId": 3,
+            "menuItemName": "卤煮火烧",
+            "menuItemImage": "/uploads/menu3.jpg",
+            "price": 32.00,
+            "quantity": 1
+          }
+        ]
+      }
+    ],
+    "totalElements": 50,
+    "totalPages": 5,
+    "size": 10,
+    "number": 0
+  }
+}
+```
+
+**评价对象字段说明**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | number | 评价ID |
+| orderId | number | 订单ID |
+| userId | number | 用户ID |
+| username | string | 用户名（匿名时显示"匿名用户"） |
+| userAvatar | string | 用户头像（匿名时为null） |
+| restaurantId | number | 餐厅ID |
+| tasteRating | number | 口味评分 1-5 |
+| packagingRating | number | 包装评分 1-5 |
+| deliveryRating | number | 配送评分 1-5 |
+| overallRating | number | 综合评分（三项平均） |
+| content | string | 评价内容 |
+| images | string[] | 评价图片URL数组 |
+| isAnonymous | boolean | 是否匿名 |
+| likeCount | number | 点赞数 |
+| isLiked | boolean | 当前用户是否已点赞 |
+| replyContent | string | 商家回复内容 |
+| replyTime | string | 商家回复时间 |
+| createdAt | string | 评价创建时间 |
+| orderItems | array | 订单商品列表 |
+
+**orderItems 商品对象字段**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | number | 订单项ID |
+| menuItemId | number | 菜品ID |
+| menuItemName | string | 菜品名称 |
+| menuItemImage | string | 菜品图片URL |
+| price | number | 菜品单价 |
+| quantity | number | 购买数量 |
+
+---
+
+### 获取餐厅评价统计
+
+**GET** `/restaurants/{restaurantId}/reviews/stats`
+
+**路径参数**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| restaurantId | number | 餐厅ID |
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "totalReviews": 50,
+    "averageRating": 4.5,
+    "avgTasteRating": 4.6,
+    "avgPackagingRating": 4.3,
+    "avgDeliveryRating": 4.5,
+    "ratingDistribution": {
+      "5": 30,
+      "4": 15,
+      "3": 3,
+      "2": 1,
+      "1": 1
+    }
+  }
+}
+```
+
+---
+
+### 检查订单是否已评价
+
+**GET** `/reviews/check/{orderId}`
+
+**路径参数**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| orderId | number | 订单ID |
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": true
+}
+```
+
+---
+
+### 获取订单的评价
+
+**GET** `/reviews/order/{orderId}`
+
+**路径参数**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| orderId | number | 订单ID |
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "orderId": 1,
+    "userId": 1,
+    "username": "张三",
+    ...
+  }
+}
+```
+
+---
+
+### 获取我的评价列表
+
+**GET** `/reviews/my`
+
+> 需要认证
+
+**请求头**
+
+```
+Authorization: Bearer <token>
+```
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": [
+    {
+      "id": 1,
+      "orderId": 1,
+      ...
+    }
+  ]
+}
+```
+
+---
+
+### 点赞评价
+
+**POST** `/reviews/{id}/like`
+
+> 需要认证
+
+**请求头**
+
+```
+Authorization: Bearer <token>
+```
+
+**路径参数**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | number | 评价ID |
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "点赞成功",
+  "data": null
+}
+```
+
+---
+
+### 取消点赞
+
+**DELETE** `/reviews/{id}/like`
+
+> 需要认证
+
+**请求头**
+
+```
+Authorization: Bearer <token>
+```
+
+**路径参数**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | number | 评价ID |
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "已取消点赞",
+  "data": null
+}
+```
+
+---
+
+### 商家回复评价
+
+**PUT** `/merchant/reviews/{id}/reply`
+
+> 需要商家认证
+
+**请求头**
+
+```
+Authorization: Bearer <token>
+```
+
+**路径参数**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| id | number | 评价ID |
+
+**请求参数**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| content | string | 是 | 回复内容 |
+
+**请求示例**
+
+```json
+{
+  "content": "感谢您的好评，欢迎下次光临！"
+}
+```
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "回复成功",
+  "data": {
+    "id": 1,
+    "orderId": 1,
+    ...
+    "replyContent": "感谢您的好评，欢迎下次光临！",
+    "replyTime": "2024-01-15T14:00:00"
+  }
+}
+```
+
+---
+
+### 获取菜品评价列表
+
+**GET** `/menu-items/{menuItemId}/reviews`
+
+**路径参数**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| menuItemId | number | 菜品ID |
+
+**查询参数**
+
+| 参数 | 类型 | 必填 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| page | number | 否 | 0 | 页码 |
+| size | number | 否 | 10 | 每页数量 |
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "content": [
+      {
+        "id": 1,
+        "orderId": 1,
+        "userId": 1,
+        "username": "张三",
+        "userAvatar": "/uploads/avatar.jpg",
+        "restaurantId": 1,
+        "tasteRating": 5,
+        "packagingRating": 4,
+        "deliveryRating": 5,
+        "overallRating": 4.7,
+        "content": "味道很好，配送也很快！",
+        "images": ["/uploads/review1.jpg"],
+        "isAnonymous": false,
+        "likeCount": 10,
+        "isLiked": true,
+        "replyContent": "感谢您的好评！",
+        "replyTime": "2024-01-15T14:00:00",
+        "createdAt": "2024-01-15T12:30:00",
+        "orderItems": [
+          {
+            "id": 1,
+            "menuItemId": 1,
+            "menuItemName": "老北京炸酱面",
+            "menuItemImage": "/uploads/menu1.jpg",
+            "price": 28.00,
+            "quantity": 2
+          }
+        ]
+      }
+    ],
+    "totalElements": 50,
+    "totalPages": 5,
+    "size": 10,
+    "number": 0
+  }
+}
+```
+
+**说明**
+
+- 此接口返回包含指定菜品的所有评价
+- 评价按创建时间倒序排列
+- `orderItems` 中会标注当前菜品，方便用户查看该评价是否针对当前菜品
+
+---
+
+### 获取菜品评价统计
+
+**GET** `/menu-items/{menuItemId}/reviews/stats`
+
+**路径参数**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| menuItemId | number | 菜品ID |
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "totalReviews": 25,
+    "averageRating": 4.6
+  }
+}
+```
+
+**响应字段说明**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| totalReviews | number | 包含该菜品的评价总数 |
+| averageRating | number | 包含该菜品的订单的平均评分 |
 
 ---
 

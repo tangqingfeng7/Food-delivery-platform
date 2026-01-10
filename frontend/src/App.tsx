@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import Home from './pages/Home'
 import RestaurantList from './pages/RestaurantList'
 import RestaurantDetail from './pages/RestaurantDetail'
+import MenuItemDetail from './pages/MenuItemDetail'
 import Cart from './pages/Cart'
 import Orders from './pages/Orders'
 import OrderDetail from './pages/OrderDetail'
@@ -41,6 +42,7 @@ function App() {
             <Route index element={<Home />} />
             <Route path="restaurants" element={<RestaurantList />} />
             <Route path="restaurant/:id" element={<RestaurantDetail />} />
+            <Route path="menu-item/:id" element={<MenuItemDetail />} />
             <Route path="cart" element={<Cart />} />
             <Route path="orders" element={<Orders />} />
             <Route path="order/:id" element={<OrderDetail />} />

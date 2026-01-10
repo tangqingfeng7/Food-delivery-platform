@@ -13,11 +13,14 @@ import {
   CreditCard,
   Loader2,
   Store,
-  Copy
+  Copy,
+  Star
 } from 'lucide-react'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
+import ReviewForm from '../components/ReviewForm'
 import { getOrderById, cancelOrder, confirmOrder, payOrder } from '../api/order'
+import { checkOrderReviewed } from '../api/review'
 import { Order, OrderStatus } from '../types'
 import { confirm } from '../store/useConfirmStore'
 import { toast } from '../store/useToastStore'
@@ -92,6 +95,8 @@ const OrderDetail = () => {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
   const [isPolling, setIsPolling] = useState(true)
+  const [isReviewed, setIsReviewed] = useState(false)
+  const [showReviewModal, setShowReviewModal] = useState(false)
   const { user } = useUserStore()
   const { connect, disconnect, subscribeToUserOrders, status: wsStatus } = useWebSocketStore()
 
@@ -131,6 +136,28 @@ const OrderDetail = () => {
       fetchOrder(Number(id))
     }
   }, [id])
+
+  // 检查已完成订单是否已评价
+  useEffect(() => {
+    if (order && order.status === 'COMPLETED') {
+      checkIfReviewed(order.id)
+    }
+  }, [order?.id, order?.status])
+
+  const checkIfReviewed = async (orderId: number) => {
+    try {
+      const res = await checkOrderReviewed(orderId)
+      setIsReviewed(res.data.data)
+    } catch (error) {
+      console.error('检查评价状态失败:', error)
+    }
+  }
+
+  const handleReviewSuccess = () => {
+    setShowReviewModal(false)
+    setIsReviewed(true)
+    toast.success('感谢您的评价!')
+  }
 
   // 轮询作为备用方案（WebSocket 未连接且订单未完成时使用）
   useEffect(() => {
@@ -514,7 +541,7 @@ const OrderDetail = () => {
       </div>
 
       {/* Action Buttons */}
-      {(order.status === 'PENDING' || order.status === 'DELIVERING') && (
+      {(order.status === 'PENDING' || order.status === 'DELIVERING' || (order.status === 'COMPLETED' && !isReviewed)) && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-xl border-t border-gray-200">
           <div className="max-w-3xl mx-auto flex gap-3">
             {order.status === 'PENDING' && (
@@ -545,7 +572,33 @@ const OrderDetail = () => {
                 确认收货
               </Button>
             )}
+            {order.status === 'COMPLETED' && !isReviewed && (
+              <Button
+                className="flex-1"
+                onClick={() => setShowReviewModal(true)}
+              >
+                <Star className="w-4 h-4 mr-2" />
+                去评价
+              </Button>
+            )}
           </div>
+        </div>
+      )}
+
+      {/* Review Modal */}
+      {showReviewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-lg"
+          >
+            <ReviewForm
+              orderId={order.id}
+              onSuccess={handleReviewSuccess}
+              onCancel={() => setShowReviewModal(false)}
+            />
+          </motion.div>
         </div>
       )}
     </div>

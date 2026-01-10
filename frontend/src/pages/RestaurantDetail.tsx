@@ -4,7 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Star, Clock, MapPin, Phone, Plus, Minus, ShoppingCart, Heart, Share2, Loader2 } from 'lucide-react'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
+import ReviewList from '../components/ReviewList'
 import { getRestaurantById, getMenuCategories, getMenuItems } from '../api/restaurant'
+import { getRestaurantReviewStats } from '../api/review'
 import { addFavorite, removeFavorite, checkFavorite } from '../api/favorite'
 import { getImageUrl } from '../api/upload'
 import { useCartStore } from '../store/useCartStore'
@@ -24,6 +26,8 @@ const RestaurantDetail = () => {
   const [loading, setLoading] = useState(true)
   const [isFavorite, setIsFavorite] = useState(false)
   const [favoriteLoading, setFavoriteLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState<'menu' | 'reviews'>('menu')
+  const [actualReviewCount, setActualReviewCount] = useState<number | null>(null)
 
   const { isLoggedIn } = useUserStore()
   const { 
@@ -58,6 +62,23 @@ const RestaurantDetail = () => {
       checkFavoriteStatus(Number(id))
     }
   }, [id, isLoggedIn])
+
+  // 获取评价统计
+  useEffect(() => {
+    if (id) {
+      fetchReviewStats(Number(id))
+    }
+  }, [id])
+
+  const fetchReviewStats = async (restaurantId: number) => {
+    try {
+      const res = await getRestaurantReviewStats(restaurantId)
+      setActualReviewCount(res.data.data.totalReviews)
+    } catch (error) {
+      console.error('获取评价统计失败:', error)
+      setActualReviewCount(0)
+    }
+  }
 
   useEffect(() => {
     if (id && activeCategory !== null) {
@@ -181,6 +202,31 @@ const RestaurantDetail = () => {
     return restaurant.distance
   }, [restaurant, userLat, userLng, isLocated])
 
+  // 根据距离计算预计送达时间
+  const realDeliveryTime = useMemo(() => {
+    if (!restaurant) return null
+    
+    // 如果有真实距离，根据距离计算预计送达时间
+    if (realDistance !== null && isLocated && userLat && userLng && 
+        restaurant.latitude && restaurant.longitude) {
+      const BASE_PREP_TIME = 15  // 基础准备时间（分钟）
+      const TIME_PER_KM = 3      // 每公里配送时间（分钟）
+      
+      const totalMinutes = BASE_PREP_TIME + Math.ceil(realDistance * TIME_PER_KM)
+      
+      // 计算预计送达时间
+      const now = new Date()
+      now.setMinutes(now.getMinutes() + totalMinutes)
+      const hours = now.getHours().toString().padStart(2, '0')
+      const minutes = now.getMinutes().toString().padStart(2, '0')
+      
+      return `${hours}:${minutes}`
+    }
+    
+    // 否则使用餐厅默认配送时间
+    return restaurant.deliveryTime
+  }, [restaurant, realDistance, isLocated, userLat, userLng])
+
   const totalItems = getTotalCount()
   const totalPrice = getTotalPrice()
 
@@ -235,11 +281,11 @@ const RestaurantDetail = () => {
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                       <span className="font-semibold">{restaurant.rating}</span>
-                      <span className="text-white/60">({restaurant.reviewCount}评价)</span>
+                      <span className="text-white/60">({actualReviewCount ?? restaurant.reviewCount}评价)</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Clock className="w-4 h-4" />
-                      <span>{restaurant.deliveryTime}分钟</span>
+                      <span>{realDeliveryTime ?? restaurant.deliveryTime}送达</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
@@ -304,7 +350,32 @@ const RestaurantDetail = () => {
           </div>
         </Card>
 
+        {/* Tab Navigation */}
+        <div className="flex gap-4 mb-6">
+          <button
+            onClick={() => setActiveTab('menu')}
+            className={`px-6 py-2 rounded-full font-medium transition-all ${
+              activeTab === 'menu'
+                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
+                : 'bg-white text-gray-600 hover:bg-orange-50'
+            }`}
+          >
+            菜单
+          </button>
+          <button
+            onClick={() => setActiveTab('reviews')}
+            className={`px-6 py-2 rounded-full font-medium transition-all ${
+              activeTab === 'reviews'
+                ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
+                : 'bg-white text-gray-600 hover:bg-orange-50'
+            }`}
+          >
+            评价 ({actualReviewCount ?? restaurant.reviewCount})
+          </button>
+        </div>
+
         {/* Menu Section */}
+        {activeTab === 'menu' && (
         <div className="flex gap-6">
           {/* Category Sidebar */}
           <div className="hidden md:block w-48 flex-shrink-0">
@@ -368,11 +439,14 @@ const RestaurantDetail = () => {
                     transition={{ delay: index * 0.05 }}
                   >
                     <Card className={`p-4 flex gap-4 ${!item.isAvailable ? 'opacity-60' : ''}`}>
-                      <div className="relative w-28 h-28 flex-shrink-0 rounded-xl overflow-hidden">
+                      <div
+                        className="relative w-28 h-28 flex-shrink-0 rounded-xl overflow-hidden cursor-pointer"
+                        onClick={() => navigate(`/menu-item/${item.id}`)}
+                      >
                         <img
                           src={getImageUrl(item.image)}
                           alt={item.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                         />
                         {item.isHot && (
                           <div className="absolute top-1 left-1 px-2 py-0.5 rounded bg-red-500 text-white text-xs">
@@ -386,7 +460,12 @@ const RestaurantDetail = () => {
                         )}
                       </div>
                       <div className="flex-1 flex flex-col">
-                        <h3 className="font-semibold text-gray-800 mb-1">{item.name}</h3>
+                        <h3
+                          className="font-semibold text-gray-800 mb-1 cursor-pointer hover:text-orange-500 transition-colors"
+                          onClick={() => navigate(`/menu-item/${item.id}`)}
+                        >
+                          {item.name}
+                        </h3>
                         <p className="text-sm text-gray-500 line-clamp-2 mb-2">
                           {item.description}
                         </p>
@@ -414,7 +493,10 @@ const RestaurantDetail = () => {
                                       animate={{ opacity: 1, scale: 1 }}
                                       exit={{ opacity: 0, scale: 0 }}
                                       whileTap={{ scale: 0.9 }}
-                                      onClick={() => removeItem(item.id)}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        removeItem(item.id)
+                                      }}
                                       className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
                                     >
                                       <Minus className="w-4 h-4" />
@@ -432,7 +514,10 @@ const RestaurantDetail = () => {
                               </AnimatePresence>
                               <motion.button
                                 whileTap={{ scale: 0.9 }}
-                                onClick={() => handleAddToCart(item)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleAddToCart(item)
+                                }}
                                 className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/30"
                               >
                                 <Plus className="w-4 h-4" />
@@ -450,6 +535,12 @@ const RestaurantDetail = () => {
             </motion.div>
           </div>
         </div>
+        )}
+
+        {/* Reviews Section */}
+        {activeTab === 'reviews' && (
+          <ReviewList restaurantId={restaurant.id} />
+        )}
       </div>
 
       {/* Floating Cart Bar */}

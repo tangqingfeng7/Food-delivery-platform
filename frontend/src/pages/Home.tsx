@@ -7,6 +7,7 @@ import Card from '../components/ui/Card'
 import { getCategories } from '../api/category'
 import { getFeaturedRestaurants } from '../api/restaurant'
 import { getImageUrl } from '../api/upload'
+import { useLocationStore } from '../store/useLocationStore'
 import { Category, Restaurant } from '../types'
 
 // 图标映射
@@ -28,16 +29,28 @@ const Home = () => {
   const [searchKeyword, setSearchKeyword] = useState('')
   const [address, setAddress] = useState('')
 
+  // 获取用户位置
+  const { 
+    latitude: userLat, 
+    longitude: userLng, 
+    getCurrentPosition 
+  } = useLocationStore()
+
+  // 获取用户位置
+  useEffect(() => {
+    getCurrentPosition()
+  }, [])
+
   useEffect(() => {
     fetchData()
-  }, [])
+  }, [userLat, userLng])
 
   const fetchData = async () => {
     try {
       setLoading(true)
       const [categoriesRes, restaurantsRes] = await Promise.all([
         getCategories(),
-        getFeaturedRestaurants(6),
+        getFeaturedRestaurants(6, userLat ?? undefined, userLng ?? undefined),
       ])
       setCategories(categoriesRes.data.data)
       setFeaturedRestaurants(restaurantsRes.data.data)
@@ -317,7 +330,7 @@ const Home = () => {
                           </div>
                           <div className="flex items-center gap-1 text-gray-500">
                             <Clock className="w-4 h-4" />
-                            <span>{restaurant.deliveryTime}分钟</span>
+                            <span>{restaurant.deliveryTime}送达</span>
                           </div>
                           <div className="text-gray-500">
                             起送¥{restaurant.minOrder}

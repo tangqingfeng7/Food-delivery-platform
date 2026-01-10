@@ -6,6 +6,7 @@ import Card from '../components/ui/Card'
 import { getRestaurants } from '../api/restaurant'
 import { getCategories } from '../api/category'
 import { getImageUrl } from '../api/upload'
+import { useLocationStore } from '../store/useLocationStore'
 import { Restaurant, Category } from '../types'
 
 const RestaurantList = () => {
@@ -23,13 +24,26 @@ const RestaurantList = () => {
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
 
+  // 获取用户位置
+  const { 
+    latitude: userLat, 
+    longitude: userLng, 
+    isLocated,
+    getCurrentPosition 
+  } = useLocationStore()
+
+  // 获取用户位置
+  useEffect(() => {
+    getCurrentPosition()
+  }, [])
+
   useEffect(() => {
     fetchCategories()
   }, [])
 
   useEffect(() => {
     fetchRestaurants()
-  }, [selectedCategory, sortBy, page])
+  }, [selectedCategory, sortBy, page, userLat, userLng])
 
   const fetchCategories = async () => {
     try {
@@ -49,6 +63,8 @@ const RestaurantList = () => {
         sortBy,
         page,
         size: 12,
+        userLat: userLat ?? undefined,
+        userLng: userLng ?? undefined,
       })
       setRestaurants(res.data.data.content)
       setTotalPages(res.data.data.totalPages)
@@ -293,7 +309,7 @@ const RestaurantList = () => {
                       <div className="flex items-center justify-between text-sm text-gray-500 pt-3 border-t border-gray-100">
                         <div className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
-                          <span>{restaurant.deliveryTime}分钟</span>
+                          <span>{restaurant.deliveryTime}送达</span>
                         </div>
                         <span>配送费¥{restaurant.deliveryFee}</span>
                         <span>起送¥{restaurant.minOrder}</span>

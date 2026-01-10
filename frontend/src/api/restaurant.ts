@@ -8,14 +8,16 @@ export const getRestaurants = (params?: {
   sortBy?: string
   page?: number
   size?: number
+  userLat?: number
+  userLng?: number
 }) => {
   return request.get<ApiResponse<PageResponse<Restaurant>>>('/restaurants', { params })
 }
 
 // 获取推荐餐厅
-export const getFeaturedRestaurants = (limit?: number) => {
+export const getFeaturedRestaurants = (limit?: number, userLat?: number, userLng?: number) => {
   return request.get<ApiResponse<Restaurant[]>>('/restaurants/featured', {
-    params: { limit: limit || 6 },
+    params: { limit: limit || 6, userLat, userLng },
   })
 }
 
@@ -46,4 +48,9 @@ export const searchRestaurants = (keyword: string) => {
   return request.get<ApiResponse<Restaurant[]>>('/restaurants/search', {
     params: { keyword },
   })
+}
+
+// 获取单个菜品详情
+export const getMenuItemById = (menuItemId: number) => {
+  return request.get<ApiResponse<MenuItem>>(`/restaurants/menu-items/${menuItemId}`)
 }

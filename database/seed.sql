@@ -138,6 +138,59 @@ INSERT INTO menu_items (restaurant_id, menu_category_id, name, description, pric
 (8, 33, '抹茶拿铁', '日式抹茶配牛奶，清新回甘', 35.00, NULL, 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400', 1876, FALSE, TRUE, TRUE, 4),
 (8, 34, '三明治', '新鲜蔬菜配火腿，营养健康', 28.00, NULL, 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400', 1234, FALSE, FALSE, TRUE, 5);
 
+-- 插入已完成的订单（用于评价）
+INSERT INTO orders (order_no, user_id, restaurant_id, total_amount, delivery_fee, discount_amount, pay_amount, status, address, phone, remark, completed_at, created_at) VALUES
+('ORD20260101000001ABCD', 1, 3, 80.00, 5.00, 0, 85.00, 'COMPLETED', '北京市朝阳区建国路88号', '13800138001', '不要香菜', '2026-01-01 13:30:00', '2026-01-01 12:00:00'),
+('ORD20260102000002EFGH', 1, 1, 56.00, 3.00, 0, 59.00, 'COMPLETED', '北京市朝阳区建国路88号', '13800138001', NULL, '2026-01-02 19:30:00', '2026-01-02 18:00:00'),
+('ORD20260103000003IJKL', 2, 3, 96.00, 5.00, 0, 101.00, 'COMPLETED', '北京市海淀区中关村大街1号', '13800138002', '多加葱', '2026-01-03 12:45:00', '2026-01-03 11:30:00'),
+('ORD20260104000004MNOP', 2, 6, 126.00, 3.00, 0, 129.00, 'COMPLETED', '北京市海淀区中关村大街1号', '13800138002', NULL, '2026-01-04 20:00:00', '2026-01-04 19:00:00'),
+('ORD20260105000005QRST', 3, 3, 84.00, 5.00, 0, 89.00, 'COMPLETED', '上海市浦东新区陆家嘴环路1000号', '13800138003', NULL, '2026-01-05 13:00:00', '2026-01-05 12:00:00'),
+('ORD20260106000006UVWX', 1, 3, 42.00, 5.00, 0, 47.00, 'COMPLETED', '北京市朝阳区建国路88号', '13800138001', NULL, '2026-01-06 12:30:00', '2026-01-06 11:30:00'),
+('ORD20260107000007YZAB', 2, 3, 78.00, 5.00, 0, 83.00, 'COMPLETED', '北京市海淀区中关村大街1号', '13800138002', '少盐', '2026-01-07 13:15:00', '2026-01-07 12:00:00'),
+('ORD20260108000008CDEF', 3, 1, 60.00, 3.00, 0, 63.00, 'COMPLETED', '上海市浦东新区陆家嘴环路1000号', '13800138003', NULL, '2026-01-08 19:00:00', '2026-01-08 18:00:00');
+
+-- 插入订单项
+INSERT INTO order_items (order_id, menu_item_id, menu_item_name, menu_item_image, price, quantity) VALUES
+(1, 17, '豚骨拉面', 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?w=400', 42.00, 1),
+(1, 18, '味噌拉面', 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?w=400', 38.00, 1),
+(2, 1, '老北京炸酱面', 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400', 28.00, 2),
+(3, 17, '豚骨拉面', 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?w=400', 42.00, 2),
+(3, 21, '日式煎饺', 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?w=400', 18.00, 1),
+(4, 37, '招牌蜂蜜炸鸡', 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=400', 68.00, 1),
+(4, 38, '原味炸鸡', 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=400', 58.00, 1),
+(5, 17, '豚骨拉面', 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?w=400', 42.00, 2),
+(6, 17, '豚骨拉面', 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?w=400', 42.00, 1),
+(7, 17, '豚骨拉面', 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?w=400', 42.00, 1),
+(7, 19, '酱油拉面', 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?w=400', 35.00, 1),
+(8, 1, '老北京炸酱面', 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400', 28.00, 1),
+(8, 2, '卤煮火烧', 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=400', 32.00, 1);
+
+-- 插入评价数据
+INSERT INTO reviews (order_id, user_id, restaurant_id, taste_rating, packaging_rating, delivery_rating, overall_rating, content, images, is_anonymous, like_count, reply_content, reply_time, created_at) VALUES
+(1, 1, 3, 5, 5, 5, 5.0, '豚骨汤底非常浓郁，面条筋道，叉烧入口即化！强烈推荐！', NULL, FALSE, 23, '感谢您的好评，欢迎再次光临！', '2026-01-01 15:00:00', '2026-01-01 14:00:00'),
+(2, 1, 1, 5, 4, 5, 4.7, '正宗老北京味道，炸酱很香，面码给得很足！', NULL, FALSE, 15, '谢谢支持！', '2026-01-02 20:00:00', '2026-01-02 19:45:00'),
+(3, 2, 3, 5, 5, 4, 4.7, '拉面很正宗，汤底醇厚，配料新鲜，就是配送稍微慢了一点', NULL, FALSE, 18, '感谢反馈，我们会改进配送速度！', '2026-01-03 14:00:00', '2026-01-03 13:00:00'),
+(4, 2, 6, 5, 5, 5, 5.0, '炸鸡外酥里嫩，蜂蜜酱太好吃了！配送也很快，必点！', NULL, FALSE, 31, NULL, NULL, '2026-01-04 20:30:00'),
+(5, 3, 3, 4, 5, 5, 4.7, '味道不错，包装很用心，下次还会再点', NULL, TRUE, 8, NULL, NULL, '2026-01-05 13:30:00'),
+(6, 1, 3, 5, 4, 5, 4.7, '第N次点了，一如既往的好吃！', NULL, FALSE, 12, '感谢您的持续支持！', '2026-01-06 14:00:00', '2026-01-06 13:00:00'),
+(7, 2, 3, 5, 5, 5, 5.0, '强烈推荐豚骨拉面！汤底浓郁，面条Q弹，太完美了', NULL, FALSE, 25, NULL, NULL, '2026-01-07 14:00:00'),
+(8, 3, 1, 4, 4, 5, 4.3, '老北京风味，挺地道的，下次试试卤煮', NULL, FALSE, 6, NULL, NULL, '2026-01-08 19:30:00');
+
+-- 插入评价点赞数据
+INSERT INTO review_likes (review_id, user_id, created_at) VALUES
+(1, 2, '2026-01-01 16:00:00'),
+(1, 3, '2026-01-01 17:00:00'),
+(2, 2, '2026-01-02 21:00:00'),
+(3, 1, '2026-01-03 15:00:00'),
+(4, 1, '2026-01-04 21:00:00'),
+(4, 3, '2026-01-04 22:00:00'),
+(7, 1, '2026-01-07 15:00:00');
+
+-- 更新餐厅评分和评价数（根据实际评价数据）
+UPDATE restaurants SET rating = 4.9, review_count = 5 WHERE id = 3;
+UPDATE restaurants SET rating = 4.5, review_count = 2 WHERE id = 1;
+UPDATE restaurants SET rating = 5.0, review_count = 1 WHERE id = 6;
+
 -- 插入通知数据
 INSERT INTO notifications (user_id, title, content, type, is_read, related_id) VALUES
 (1, '欢迎使用美食速递', '感谢您注册美食速递，祝您用餐愉快！', 'SYSTEM', FALSE, NULL),

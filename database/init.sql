@@ -164,6 +164,39 @@ CREATE TABLE IF NOT EXISTS notifications (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- 评价表
+CREATE TABLE IF NOT EXISTS reviews (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    order_id BIGINT NOT NULL UNIQUE COMMENT '订单ID，一个订单只能评价一次',
+    user_id BIGINT NOT NULL COMMENT '评价用户ID',
+    restaurant_id BIGINT NOT NULL COMMENT '餐厅ID',
+    taste_rating INT NOT NULL COMMENT '口味评分 1-5',
+    packaging_rating INT NOT NULL COMMENT '包装评分 1-5',
+    delivery_rating INT NOT NULL COMMENT '配送评分 1-5',
+    overall_rating DECIMAL(2,1) NOT NULL COMMENT '综合评分（三项平均）',
+    content TEXT COMMENT '评价内容',
+    images VARCHAR(2000) COMMENT '评价图片，逗号分隔',
+    is_anonymous BOOLEAN DEFAULT FALSE COMMENT '是否匿名',
+    like_count INT DEFAULT 0 COMMENT '点赞数',
+    reply_content TEXT COMMENT '商家回复内容',
+    reply_time DATETIME COMMENT '商家回复时间',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (restaurant_id) REFERENCES restaurants(id)
+);
+
+-- 评价点赞表
+CREATE TABLE IF NOT EXISTS review_likes (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    review_id BIGINT NOT NULL COMMENT '评价ID',
+    user_id BIGINT NOT NULL COMMENT '点赞用户ID',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (review_id) REFERENCES reviews(id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    UNIQUE KEY uk_review_user (review_id, user_id)
+);
+
 -- 创建索引
 CREATE INDEX idx_favorites_user ON favorites(user_id);
 CREATE INDEX idx_restaurants_category ON restaurants(category_id);
@@ -178,3 +211,8 @@ CREATE INDEX idx_addresses_user ON addresses(user_id);
 CREATE INDEX idx_notifications_user ON notifications(user_id);
 CREATE INDEX idx_notifications_type ON notifications(type);
 CREATE INDEX idx_notifications_read ON notifications(is_read);
+CREATE INDEX idx_reviews_restaurant ON reviews(restaurant_id);
+CREATE INDEX idx_reviews_user ON reviews(user_id);
+CREATE INDEX idx_reviews_order ON reviews(order_id);
+CREATE INDEX idx_review_likes_review ON review_likes(review_id);
+CREATE INDEX idx_review_likes_user ON review_likes(user_id);

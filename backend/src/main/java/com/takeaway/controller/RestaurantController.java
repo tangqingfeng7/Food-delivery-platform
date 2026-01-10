@@ -24,17 +24,21 @@ public class RestaurantController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false, defaultValue = "rating") String sortBy,
             @RequestParam(required = false, defaultValue = "0") int page,
-            @RequestParam(required = false, defaultValue = "12") int size) {
+            @RequestParam(required = false, defaultValue = "12") int size,
+            @RequestParam(required = false) Double userLat,
+            @RequestParam(required = false) Double userLng) {
         
-        Page<RestaurantDTO> restaurants = restaurantService.getRestaurants(categoryId, keyword, sortBy, page, size);
+        Page<RestaurantDTO> restaurants = restaurantService.getRestaurants(categoryId, keyword, sortBy, page, size, userLat, userLng);
         return ApiResponse.success(restaurants);
     }
 
     @GetMapping("/featured")
     public ApiResponse<List<RestaurantDTO>> getFeaturedRestaurants(
-            @RequestParam(required = false, defaultValue = "6") int limit) {
+            @RequestParam(required = false, defaultValue = "6") int limit,
+            @RequestParam(required = false) Double userLat,
+            @RequestParam(required = false) Double userLng) {
         
-        List<RestaurantDTO> restaurants = restaurantService.getFeaturedRestaurants(limit);
+        List<RestaurantDTO> restaurants = restaurantService.getFeaturedRestaurants(limit, userLat, userLng);
         return ApiResponse.success(restaurants);
     }
 
@@ -64,6 +68,16 @@ public class RestaurantController {
         
         List<MenuItemDTO> items = restaurantService.getMenuItems(id, categoryId);
         return ApiResponse.success(items);
+    }
+
+    @GetMapping("/menu-items/{menuItemId}")
+    public ApiResponse<MenuItemDTO> getMenuItemById(@PathVariable Long menuItemId) {
+        try {
+            MenuItemDTO menuItem = restaurantService.getMenuItemById(menuItemId);
+            return ApiResponse.success(menuItem);
+        } catch (Exception e) {
+            return ApiResponse.error(404, e.getMessage());
+        }
     }
 
     @GetMapping("/search")

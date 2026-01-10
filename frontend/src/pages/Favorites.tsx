@@ -146,7 +146,7 @@ const Favorites = () => {
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
-                          <span>{favorite.restaurant.deliveryTime}分钟</span>
+                          <span>{favorite.restaurant.deliveryTime}送达</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <MapPin className="w-4 h-4" />
