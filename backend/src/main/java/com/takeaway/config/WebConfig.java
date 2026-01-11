@@ -2,6 +2,7 @@ package com.takeaway.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -22,7 +23,7 @@ public class WebConfig implements WebMvcConfigurer {
      * 允许通过 /uploads/** 访问上传的文件
      */
     @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+    public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
         // 将 /uploads/** 映射到本地上传目录
         String absolutePath = Paths.get(uploadPath).toAbsolutePath().toString();
         registry.addResourceHandler("/uploads/**")
@@ -33,7 +34,7 @@ public class WebConfig implements WebMvcConfigurer {
      * 配置跨域访问
      */
     @Override
-    public void addCorsMappings(CorsRegistry registry) {
+    public void addCorsMappings(@NonNull CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedOriginPatterns("*")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
