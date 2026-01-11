@@ -18,6 +18,7 @@ import About from './pages/About'
 import Settings from './pages/Settings'
 import AccountSecurity from './pages/AccountSecurity'
 import Payment from './pages/Payment'
+import PaymentResult from './pages/PaymentResult'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import ToastContainer from './components/ui/Toast'
@@ -59,6 +60,7 @@ function App() {
             <Route path="settings" element={<Settings />} />
             <Route path="account-security" element={<AccountSecurity />} />
             <Route path="payment" element={<Payment />} />
+            <Route path="payment/result" element={<PaymentResult />} />
           </Route>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

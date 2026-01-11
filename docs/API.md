@@ -1094,8 +1094,8 @@ Authorization: Bearer <token>
 
 | 支付方式 | 说明 | 状态 |
 |----------|------|------|
-| wechat | 微信支付 | 模拟（预留接口） |
-| alipay | 支付宝支付 | 模拟（预留接口） |
+| wechat | 微信支付（Native扫码支付） | 已实现真实接口 |
+| alipay | 支付宝支付（电脑网站支付） | 已实现真实接口 |
 | balance | 余额支付 | 已实现真实接口 |
 
 **余额支付逻辑**
@@ -1150,6 +1150,274 @@ Authorization: Bearer <token>
 | id | number | 订单ID |
 
 > 注意：仅配送中状态的订单可以确认收货
+
+---
+
+## 支付宝支付接口
+
+### 创建支付宝支付
+
+**POST** `/payment/alipay/create/{orderId}`
+
+创建支付宝电脑网站支付订单，返回支付表单HTML。
+
+**请求头**
+
+```
+Authorization: Bearer <token>
+```
+
+**路径参数**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| orderId | number | 订单ID |
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "支付表单生成成功",
+  "data": {
+    "payForm": "<form name=\"punchout_form\" method=\"post\" action=\"https://openapi.alipay.com/gateway.do\">...</form>"
+  }
+}
+```
+
+**前端使用方式**
+
+```typescript
+// 1. 调用接口获取支付表单
+const res = await api.post(`/payment/alipay/create/${orderId}`)
+const payForm = res.data.data.payForm
+
+// 2. 将表单插入页面并自动提交
+const div = document.createElement('div')
+div.innerHTML = payForm
+div.style.display = 'none'
+document.body.appendChild(div)
+div.querySelector('form').submit()
+```
+
+**错误响应**
+
+| 错误码 | 说明 |
+|--------|------|
+| 400 | 订单不存在 |
+| 400 | 订单状态不正确，无法支付 |
+| 400 | 创建支付失败 |
+
+---
+
+### 查询支付宝支付状态
+
+**GET** `/payment/alipay/query`
+
+查询支付宝订单支付状态，用于支付完成后前端轮询确认。
+
+**查询参数**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| orderNo | string | 是 | 订单号 |
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "orderNo": "ORD1705312000001ABCD",
+    "status": "PAID",
+    "paid": true
+  }
+}
+```
+
+**状态说明**
+
+| 状态 | 说明 |
+|------|------|
+| PAID | 已支付 |
+| TRADE_SUCCESS | 支付宝交易成功 |
+| TRADE_FINISHED | 支付宝交易完成 |
+| TRADE_CLOSED | 交易关闭 |
+| WAIT_BUYER_PAY | 等待买家付款 |
+| UNKNOWN | 未知状态 |
+
+**说明**
+
+- 此接口会调用支付宝查询API获取真实支付状态
+- 如果查询到支付成功，会自动更新本地订单状态
+- 前端支付完成跳转回来后应轮询此接口确认支付结果
+
+---
+
+### 支付流程说明
+
+1. **用户发起支付**：前端调用 `/payment/alipay/create/{orderId}` 获取支付表单
+2. **跳转支付宝**：前端将表单插入页面并自动提交，跳转到支付宝收银台
+3. **用户完成支付**：用户在支付宝完成支付
+4. **同步跳转**：支付宝将用户重定向回 `return_url`（前端支付结果页）
+5. **查询状态**：前端调用 `/payment/alipay/query` 轮询确认支付结果
+6. **更新订单**：后端确认支付成功后自动更新订单状态
+
+```
+用户 -> 前端 -> 后端(生成表单) -> 支付宝收银台 -> 用户支付 -> return_url -> 前端(查询状态) -> 后端(确认并更新)
+```
+
+---
+
+## 微信支付接口
+
+### 创建微信支付二维码（Native支付）
+
+**POST** `/payment/wechat/create/{orderId}`
+
+创建微信Native支付订单，返回支付二维码URL。前端需要根据URL生成二维码供用户扫描支付。
+
+**请求头**
+
+```
+Authorization: Bearer <token>
+```
+
+**路径参数**
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| orderId | number | 订单ID |
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "支付二维码生成成功",
+  "data": {
+    "codeUrl": "weixin://wxpay/bizpayurl?pr=xxxxx",
+    "returnUrl": "/payment/result"
+  }
+}
+```
+
+**前端使用方式**
+
+```typescript
+import QRCode from 'qrcode'
+
+// 1. 调用接口获取支付二维码URL
+const res = await api.post(`/payment/wechat/create/${orderId}`)
+const codeUrl = res.data.data.codeUrl
+
+// 2. 生成二维码图片
+const qrcodeDataUrl = await QRCode.toDataURL(codeUrl)
+// 在页面上显示二维码
+
+// 3. 轮询查询支付状态
+const checkPaymentStatus = async () => {
+  const statusRes = await api.get('/payment/wechat/query', { params: { orderNo } })
+  if (statusRes.data.data.paid) {
+    // 支付成功，跳转到结果页
+  }
+}
+setInterval(checkPaymentStatus, 3000)
+```
+
+**错误响应**
+
+| 错误码 | 说明 |
+|--------|------|
+| 400 | 订单不存在 |
+| 400 | 订单状态不正确，无法支付 |
+| 400 | 创建微信支付失败 |
+
+---
+
+### 查询微信支付状态
+
+**GET** `/payment/wechat/query`
+
+查询微信订单支付状态，用于前端轮询确认支付结果。
+
+**查询参数**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| orderNo | string | 是 | 订单号 |
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "orderNo": "ORD1705312000001ABCD",
+    "status": "PAID",
+    "paid": true
+  }
+}
+```
+
+**状态说明**
+
+| 状态 | 说明 |
+|------|------|
+| PAID | 已支付（本地状态） |
+| SUCCESS | 微信交易成功 |
+| NOTPAY | 未支付 |
+| CLOSED | 交易关闭 |
+| USERPAYING | 用户支付中 |
+| PAYERROR | 支付失败 |
+
+**说明**
+
+- 此接口会调用微信支付查询API获取真实支付状态
+- 如果查询到支付成功，会自动更新本地订单状态
+- 前端应每3秒轮询此接口，直到获取到支付成功状态
+
+---
+
+### 微信支付异步通知
+
+**POST** `/payment/wechat/notify`
+
+接收微信服务器发送的支付结果异步通知。此接口由微信服务器调用，前端无需关心。
+
+**请求体**: 微信支付通知内容（JSON格式）
+
+**响应格式**
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "成功"
+}
+```
+
+**说明**
+
+- 此接口需要公网可访问
+- 需在微信商户平台配置回调URL
+- 生产环境需验证通知签名
+
+---
+
+### 微信支付流程说明
+
+1. **用户发起支付**：前端调用 `/payment/wechat/create/{orderId}` 获取支付二维码URL
+2. **显示二维码**：前端根据 `codeUrl` 生成二维码图片展示给用户
+3. **用户扫码支付**：用户使用微信扫描二维码完成支付
+4. **轮询状态**：前端每3秒调用 `/payment/wechat/query` 查询支付状态
+5. **支付成功**：后端收到微信回调或查询到成功状态后，自动更新订单
+6. **跳转结果页**：前端检测到支付成功后跳转到支付结果页
+
+```
+用户 -> 前端(请求二维码) -> 后端(调用微信API) -> 前端(显示二维码) -> 用户(扫码支付) -> 微信 -> 后端(回调通知) -> 前端(轮询确认) -> 结果页
+```
 
 ---
 

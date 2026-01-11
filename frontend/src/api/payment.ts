@@ -15,7 +15,7 @@ export interface PaymentResponse {
   success: boolean
   transactionId?: string
   // 微信支付相关
-  wechatPayUrl?: string      // 微信支付二维码链接
+  wechatCodeUrl?: string     // 微信支付二维码链接（Native支付）
   wechatAppId?: string       // 微信 AppId
   wechatPrepayId?: string    // 微信预支付ID
   // 支付宝相关
@@ -37,29 +37,24 @@ export interface PaymentStatusResponse {
 }
 
 /**
- * 创建微信支付订单
- * @description 调用后端接口获取微信支付参数，用于唤起微信支付
- * TODO: 接入真实的微信支付接口
- * 示例: const wechatRes = await request.post('/payment/wechat/create', data)
+ * 创建微信支付订单（Native支付，扫码支付）
+ * @description 调用后端接口获取微信支付二维码URL
  */
 export const createWechatPayment = async (data: PaymentRequest): Promise<PaymentResponse> => {
   try {
-    // TODO: 这里应该先调用微信支付接口获取支付参数，用户支付成功后再更新订单状态
-    // 目前模拟支付成功，直接更新订单状态
-    await new Promise(resolve => setTimeout(resolve, 1500)) // 模拟支付延迟
+    // 调用后端获取微信支付二维码URL
+    const res = await request.post(`/payment/wechat/create/${data.orderId}`)
     
-    // 调用后端更新订单状态为已支付
-    const res = await request.put(`/orders/${data.orderId}/pay?paymentMethod=${data.paymentMethod}`)
-    if (res.data.code === 200) {
+    if (res.data.code === 200 && res.data.data?.codeUrl) {
       return {
         success: true,
-        transactionId: `WX${Date.now()}`,
-        message: '微信支付成功',
+        wechatCodeUrl: res.data.data.codeUrl,
+        message: '请扫描二维码完成支付',
       }
     } else {
       return {
         success: false,
-        message: res.data.message || '支付失败',
+        message: res.data.message || '创建支付失败',
       }
     }
   } catch (error: unknown) {
@@ -73,28 +68,23 @@ export const createWechatPayment = async (data: PaymentRequest): Promise<Payment
 
 /**
  * 创建支付宝支付订单
- * @description 调用后端接口获取支付宝支付参数
- * TODO: 接入真实的支付宝支付接口
- * 示例: const alipayRes = await request.post('/payment/alipay/create', data)
+ * @description 调用后端接口获取支付宝支付表单，自动跳转到支付宝收银台
  */
 export const createAlipayPayment = async (data: PaymentRequest): Promise<PaymentResponse> => {
   try {
-    // TODO: 这里应该先调用支付宝接口获取支付参数，用户支付成功后再更新订单状态
-    // 目前模拟支付成功，直接更新订单状态
-    await new Promise(resolve => setTimeout(resolve, 1500)) // 模拟支付延迟
+    // 调用后端获取支付宝支付表单
+    const res = await request.post(`/payment/alipay/create/${data.orderId}`)
     
-    // 调用后端更新订单状态为已支付
-    const res = await request.put(`/orders/${data.orderId}/pay?paymentMethod=${data.paymentMethod}`)
-    if (res.data.code === 200) {
+    if (res.data.code === 200 && res.data.data?.payForm) {
       return {
         success: true,
-        transactionId: `ALI${Date.now()}`,
-        message: '支付宝支付成功',
+        alipayForm: res.data.data.payForm,
+        message: '正在跳转到支付宝...',
       }
     } else {
       return {
         success: false,
-        message: res.data.message || '支付失败',
+        message: res.data.message || '创建支付失败',
       }
     }
   } catch (error: unknown) {
@@ -103,6 +93,56 @@ export const createAlipayPayment = async (data: PaymentRequest): Promise<Payment
       success: false,
       message: errorMessage,
     }
+  }
+}
+
+/**
+ * 查询支付宝支付结果
+ * @description 查询订单支付状态，用于支付完成后的轮询查询
+ */
+export const queryAlipayPaymentStatus = async (orderNo: string): Promise<{
+  orderNo: string
+  status: string
+  paid: boolean
+}> => {
+  const res = await request.get('/payment/alipay/query', { params: { orderNo } })
+  if (res.data.code === 200) {
+    return res.data.data
+  }
+  throw new Error(res.data.message || '查询支付状态失败')
+}
+
+/**
+ * 查询微信支付结果
+ * @description 查询微信订单支付状态，用于轮询查询支付结果
+ */
+export const queryWechatPaymentStatus = async (orderNo: string): Promise<{
+  orderNo: string
+  status: string
+  paid: boolean
+}> => {
+  const res = await request.get('/payment/wechat/query', { params: { orderNo } })
+  if (res.data.code === 200) {
+    return res.data.data
+  }
+  throw new Error(res.data.message || '查询支付状态失败')
+}
+
+/**
+ * 执行支付宝支付跳转
+ * @description 将支付表单插入页面并自动提交，跳转到支付宝收银台
+ */
+export const submitAlipayForm = (formHtml: string): void => {
+  // 创建一个临时的 div 来放置表单
+  const div = document.createElement('div')
+  div.innerHTML = formHtml
+  div.style.display = 'none'
+  document.body.appendChild(div)
+  
+  // 自动提交表单
+  const form = div.querySelector('form')
+  if (form) {
+    form.submit()
   }
 }
 
@@ -146,19 +186,14 @@ export const createBalancePayment = async (data: PaymentRequest): Promise<Paymen
 /**
  * 统一支付接口
  * @description 根据支付方式调用对应的支付接口
- * - 微信/支付宝: 预留模拟接口，待接入真实支付
- * - 余额支付: 调用真实后端 API
  */
 export const createPayment = async (data: PaymentRequest): Promise<PaymentResponse> => {
   switch (data.paymentMethod) {
     case 'wechat':
-      // 微信支付 - 模拟（预留真实接口）
       return createWechatPayment(data)
     case 'alipay':
-      // 支付宝支付 - 模拟（预留真实接口）
       return createAlipayPayment(data)
     case 'balance':
-      // 余额支付 - 调用真实后端 API
       return createRealBalancePayment(data)
     default:
       throw new Error('不支持的支付方式')
@@ -170,21 +205,29 @@ export const createPayment = async (data: PaymentRequest): Promise<PaymentRespon
  * @description 查询订单的支付状态
  */
 export const getPaymentStatus = async (orderId: number): Promise<PaymentStatusResponse> => {
-  // TODO: 接入真实的支付状态查询接口
-  // 示例: return request.get(`/api/payment/status/${orderId}`)
-  
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        orderId,
-        status: 'paid',
-        paymentMethod: 'wechat',
-        transactionId: `WX${Date.now()}`,
-        paidAt: new Date().toISOString(),
-        amount: 0,
-      })
-    }, 500)
-  })
+  const res = await request.get(`/orders/${orderId}`)
+  if (res.data.code === 200) {
+    const order = res.data.data
+    const statusMap: Record<string, 'pending' | 'paid' | 'failed' | 'refunded'> = {
+      'PENDING': 'pending',
+      'PAID': 'paid',
+      'CONFIRMED': 'paid',
+      'PREPARING': 'paid',
+      'DELIVERING': 'paid',
+      'COMPLETED': 'paid',
+      'CANCELLED': 'failed',
+      'REFUNDED': 'refunded',
+    }
+    return {
+      orderId,
+      status: statusMap[order.status] || 'pending',
+      paymentMethod: order.paymentMethod || 'balance',
+      transactionId: order.orderNo,
+      paidAt: order.paidAt,
+      amount: order.payAmount,
+    }
+  }
+  throw new Error(res.data.message || '查询订单状态失败')
 }
 
 /**

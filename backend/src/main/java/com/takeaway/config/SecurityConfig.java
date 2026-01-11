@@ -48,6 +48,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/merchant/**").hasRole("MERCHANT")
                         // 管理后台接口需要 ADMIN 角色
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // 支付接口（查询接口和回调接口公开，创建接口需要认证）
+                        .requestMatchers(HttpMethod.GET, "/api/payment/**").permitAll()
+                        .requestMatchers("/api/payment/wechat/notify").permitAll()
+                        .requestMatchers("/api/payment/**").authenticated()
                         // 需要认证的接口（必须在 permitAll 之前配置）
                         .requestMatchers("/api/notifications/**").authenticated()
                         .requestMatchers("/api/orders/**").authenticated()

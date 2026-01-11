@@ -14,12 +14,16 @@ import {
   Loader2,
   Store,
   Copy,
-  Star
+  Star,
+  X,
+  Wallet
 } from 'lucide-react'
+import { RiWechatPayFill, RiAlipayFill } from 'react-icons/ri'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import ReviewForm from '../components/ReviewForm'
 import { getOrderById, cancelOrder, confirmOrder, payOrder } from '../api/order'
+import { createAlipayPayment, submitAlipayForm, createBalancePayment } from '../api/payment'
 import { checkOrderReviewed } from '../api/review'
 import { Order, OrderStatus } from '../types'
 import { confirm } from '../store/useConfirmStore'
@@ -97,6 +101,7 @@ const OrderDetail = () => {
   const [isPolling, setIsPolling] = useState(true)
   const [isReviewed, setIsReviewed] = useState(false)
   const [showReviewModal, setShowReviewModal] = useState(false)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
   const { user } = useUserStore()
   const { connect, disconnect, subscribeToUserOrders, status: wsStatus } = useWebSocketStore()
 
@@ -243,13 +248,93 @@ const OrderDetail = () => {
     }
   }
 
-  const handlePayOrder = async () => {
+  // 打开支付方式选择弹窗
+  const handlePayOrder = () => {
+    if (!order) return
+    setShowPaymentModal(true)
+  }
+
+  // 处理支付宝支付
+  const handleAlipayPayment = async () => {
     if (!order) return
     
-    // 模拟支付确认对话框
+    try {
+      setActionLoading(true)
+      setShowPaymentModal(false)
+      
+      toast.info('正在跳转到支付宝...')
+      
+      const result = await createAlipayPayment({
+        orderId: order.id,
+        amount: order.payAmount,
+        paymentMethod: 'alipay'
+      })
+      
+      if (result.success && result.alipayForm) {
+        // 跳转到支付宝收银台
+        submitAlipayForm(result.alipayForm)
+      } else {
+        toast.error('创建支付失败', result.message || '请稍后重试')
+      }
+    } catch (error) {
+      console.error('支付宝支付失败:', error)
+      toast.error('支付失败', '请稍后重试')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  // 处理余额支付
+  const handleBalancePayment = async () => {
+    if (!order) return
+    
+    const userBalance = user?.balance || 0
+    if (userBalance < order.payAmount) {
+      toast.error('余额不足', `当前余额 ¥${userBalance.toFixed(2)}，需要 ¥${order.payAmount.toFixed(2)}`)
+      return
+    }
+    
     const confirmed = await confirm({
       type: 'info',
-      title: '确认支付',
+      title: '余额支付',
+      message: `确认使用余额支付 ¥${order.payAmount.toFixed(2)} 吗？`,
+      confirmText: '确认支付',
+      cancelText: '取消',
+    })
+    
+    if (!confirmed) return
+    
+    try {
+      setActionLoading(true)
+      setShowPaymentModal(false)
+      
+      const result = await createBalancePayment({
+        orderId: order.id,
+        amount: order.payAmount,
+        paymentMethod: 'balance'
+      })
+      
+      if (result.success) {
+        toast.success('支付成功', '订单已支付，请等待商家确认')
+        fetchOrder(order.id)
+      } else {
+        toast.error('支付失败', result.message || '请稍后重试')
+      }
+    } catch (error) {
+      console.error('余额支付失败:', error)
+      toast.error('支付失败', '请稍后重试')
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  // 处理微信支付（模拟）
+  const handleWechatPayment = async () => {
+    if (!order) return
+    
+    const confirmed = await confirm({
+      type: 'info',
+      title: '微信支付',
       message: `确认支付 ¥${order.payAmount.toFixed(2)} 吗？（当前为模拟支付）`,
       confirmText: '确认支付',
       cancelText: '取消',
@@ -259,21 +344,15 @@ const OrderDetail = () => {
     
     try {
       setActionLoading(true)
+      setShowPaymentModal(false)
       
-      // TODO: 后续接入真实支付接口
-      // 1. 调用后端创建支付订单接口，获取支付参数
-      // 2. 调用第三方支付SDK（如微信支付、支付宝）
-      // 3. 支付成功后回调，更新订单状态
-      // 示例：
-      // const paymentParams = await createPayment(order.id)
-      // await thirdPartyPay(paymentParams)
-      
-      // 当前：模拟支付成功，直接调用后端更新订单状态
+      // 模拟支付延迟
+      await new Promise(resolve => setTimeout(resolve, 1500))
       await payOrder(order.id)
       toast.success('支付成功', '订单已支付，请等待商家确认')
       fetchOrder(order.id)
     } catch (error) {
-      console.error('支付失败:', error)
+      console.error('微信支付失败:', error)
       toast.error('支付失败', '请稍后重试')
     } finally {
       setActionLoading(false)
@@ -598,6 +677,92 @@ const OrderDetail = () => {
               onSuccess={handleReviewSuccess}
               onCancel={() => setShowReviewModal(false)}
             />
+          </motion.div>
+        </div>
+      )}
+
+      {/* Payment Method Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50">
+          <motion.div
+            initial={{ opacity: 0, y: 100 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 100 }}
+            className="w-full max-w-lg bg-white rounded-t-2xl"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-800">选择支付方式</h3>
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="p-2 rounded-full hover:bg-gray-100"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Payment Amount */}
+            <div className="p-4 bg-orange-50 mx-4 mt-4 rounded-xl">
+              <p className="text-gray-600 text-sm">支付金额</p>
+              <p className="text-2xl font-bold text-orange-500">¥{order.payAmount.toFixed(2)}</p>
+            </div>
+
+            {/* Payment Methods */}
+            <div className="p-4 space-y-3">
+              {/* 支付宝 */}
+              <button
+                onClick={handleAlipayPayment}
+                disabled={actionLoading}
+                className="w-full flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-colors disabled:opacity-50"
+              >
+                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
+                  <RiAlipayFill className="w-7 h-7 text-blue-500" />
+                </div>
+                <div className="flex-1 text-left">
+                  <span className="font-medium text-gray-800">支付宝</span>
+                  <p className="text-sm text-gray-500">支持花呗、余额等多种方式</p>
+                </div>
+                <ArrowLeft className="w-5 h-5 text-gray-400 rotate-180" />
+              </button>
+
+              {/* 微信支付 */}
+              <button
+                onClick={handleWechatPayment}
+                disabled={actionLoading}
+                className="w-full flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl hover:border-green-300 hover:bg-green-50 transition-colors disabled:opacity-50"
+              >
+                <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center">
+                  <RiWechatPayFill className="w-7 h-7 text-green-500" />
+                </div>
+                <div className="flex-1 text-left">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-800">微信支付</span>
+                    <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-xs rounded">模拟</span>
+                  </div>
+                  <p className="text-sm text-gray-500">推荐使用，安全便捷</p>
+                </div>
+                <ArrowLeft className="w-5 h-5 text-gray-400 rotate-180" />
+              </button>
+
+              {/* 余额支付 */}
+              <button
+                onClick={handleBalancePayment}
+                disabled={actionLoading}
+                className="w-full flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl hover:border-orange-300 hover:bg-orange-50 transition-colors disabled:opacity-50"
+              >
+                <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center">
+                  <Wallet className="w-6 h-6 text-orange-500" />
+                </div>
+                <div className="flex-1 text-left">
+                  <span className="font-medium text-gray-800">余额支付</span>
+                  <p className="text-sm text-gray-500">当前余额：¥{(user?.balance || 0).toFixed(2)}</p>
+                </div>
+                <ArrowLeft className="w-5 h-5 text-gray-400 rotate-180" />
+              </button>
+            </div>
+
+            {/* Safe padding for mobile */}
+            <div className="h-8" />
           </motion.div>
         </div>
       )}

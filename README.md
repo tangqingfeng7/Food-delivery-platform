@@ -160,6 +160,7 @@ npm run dev
 - 菜品分类展示
 - 购物车管理
 - 订单创建和管理
+- 在线支付（支付宝、微信支付、余额支付）
 - 收藏餐厅
 - 收货地址管理（支持地图定位选择）
 - 消息通知（系统通知、订单通知、优惠活动）
@@ -219,6 +220,96 @@ export const AMAP_KEY = 'your_amap_key'
 // 填入您的安全密钥
 export const AMAP_SECURITY_CODE = 'your_security_code'
 ```
+
+### 支付宝支付配置
+
+项目已集成支付宝电脑网站支付功能（轮询模式，无需公网服务器）。
+
+#### 1. 申请支付宝商户
+
+1. 访问 [支付宝开放平台](https://open.alipay.com/) 注册/登录
+2. 进入「控制台」->「我的应用」->「创建应用」
+3. 选择「网页/移动应用」，填写应用名称
+4. 在应用详情中添加「电脑网站支付」能力
+5. 提交审核并等待通过
+
+#### 2. 配置密钥
+
+1. 下载 [支付宝密钥生成工具](https://opendocs.alipay.com/common/02kipk)
+2. 生成 RSA2 密钥对
+3. 将**应用公钥**上传到开放平台，获取**支付宝公钥**
+4. 保存好应用私钥（不要泄露）
+
+#### 3. 修改配置文件
+
+修改 `backend/src/main/resources/application.yml`：
+
+```yaml
+alipay:
+  app-id: 你的AppID              # 从开放平台获取
+  private-key: 你的应用私钥       # RSA2 私钥（很长的一串字符）
+  alipay-public-key: 支付宝公钥   # 从开放平台获取
+  return-url: http://localhost:5173/payment/result  # 支付完成跳转地址
+  gateway-url: https://openapi-sandbox.dl.alipaydev.com/gateway.do  # 沙箱环境
+  # gateway-url: https://openapi.alipay.com/gateway.do  # 正式环境
+```
+
+#### 4. 支付流程说明
+
+```
+用户点击支付 -> 选择支付宝 -> 跳转支付宝收银台 -> 完成支付 -> 跳回结果页 -> 轮询确认状态 -> 订单更新
+```
+
+- **沙箱环境**：开发测试时使用沙箱网关和沙箱账号
+- **正式环境**：上线时切换为正式网关地址
+
+### 微信支付配置
+
+项目已集成微信 Native 支付功能（扫码支付，适合PC端）。
+
+#### 1. 申请微信支付商户
+
+1. 访问 [微信支付商户平台](https://pay.weixin.qq.com/) 注册商户号
+2. 完成商户认证
+3. 申请 Native 支付能力
+4. 关联公众号或小程序（获取 AppID）
+
+#### 2. 配置 API 证书和密钥
+
+1. 登录商户平台 -> 账户中心 -> API安全
+2. 申请 API 证书，下载证书文件
+3. 设置 APIv3 密钥（32位字符串）
+4. 记录商户证书序列号
+
+#### 3. 修改配置文件
+
+修改 `backend/src/main/resources/application.yml`：
+
+```yaml
+wechat:
+  pay:
+    merchant-id: 你的商户号              # 从商户平台获取
+    private-key: |                      # 商户API私钥内容
+      -----BEGIN PRIVATE KEY-----
+      你的私钥内容...
+      -----END PRIVATE KEY-----
+    merchant-serial-number: 证书序列号   # 从商户平台获取
+    api-v3-key: 你的APIv3密钥           # 32位字符串
+    app-id: 你的AppID                   # 公众号或小程序的AppID
+    notify-url: https://你的域名/api/payment/wechat/notify  # 回调地址（需公网可访问）
+    return-url: http://localhost:5173/payment/result
+```
+
+#### 4. 支付流程说明
+
+```
+用户点击支付 -> 选择微信 -> 显示支付二维码 -> 用户扫码支付 -> 轮询确认状态 -> 订单更新
+```
+
+**注意事项**：
+- 微信支付回调地址 `notify-url` 必须是公网可访问的 HTTPS 地址
+- 本地开发时可使用 ngrok 等工具进行内网穿透
+- 前端需要安装二维码生成库（如 `qrcode`）来显示支付二维码
 
 ## License
 
