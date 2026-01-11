@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -29,8 +30,12 @@ public class OrderService {
     private final RestaurantRepository restaurantRepository;
     private final MenuItemRepository menuItemRepository;
     private final WebSocketService webSocketService;
+    private final SystemConfigRepository systemConfigRepository;
 
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    
+    // 兜底默认平台抽成比例（当系统配置表无数据时使用）
+    private static final BigDecimal FALLBACK_PLATFORM_RATE = BigDecimal.valueOf(0.08);
 
     @Transactional
     public OrderDTO createOrder(Long userId, CreateOrderRequest request) {
@@ -152,6 +157,11 @@ public class OrderService {
 
     @Transactional
     public OrderDTO payOrder(Long id) {
+        return payOrder(id, "wechat");
+    }
+
+    @Transactional
+    public OrderDTO payOrder(Long id, String paymentMethod) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("订单不存在"));
 
@@ -159,10 +169,44 @@ public class OrderService {
             throw new RuntimeException("当前状态不允许支付");
         }
 
+        // 余额支付需要扣除用户余额
+        if ("balance".equals(paymentMethod)) {
+            User user = order.getUser();
+            BigDecimal payAmount = order.getPayAmount();
+            
+            if (user.getBalance().compareTo(payAmount) < 0) {
+                throw new RuntimeException("余额不足，当前余额: " + user.getBalance() + "，需要支付: " + payAmount);
+            }
+            
+            // 扣除余额
+            user.setBalance(user.getBalance().subtract(payAmount));
+            userRepository.save(user);
+        }
+
         String oldStatus = order.getStatus().name();
         order.setStatus(Order.OrderStatus.PAID);
         order.setPaidAt(LocalDateTime.now());
+        
+        // 计算平台抽成
+        Restaurant restaurant = order.getRestaurant();
+        BigDecimal platformRate = getPlatformRate(restaurant);
+        BigDecimal payAmount = order.getPayAmount();
+        
+        // 平台抽成金额 = 支付金额 × 抽成比例（四舍五入保留两位小数）
+        BigDecimal platformFee = payAmount.multiply(platformRate).setScale(2, RoundingMode.HALF_UP);
+        // 商家实际收入 = 支付金额 - 平台抽成
+        BigDecimal merchantIncome = payAmount.subtract(platformFee);
+        
+        order.setPlatformRate(platformRate);
+        order.setPlatformFee(platformFee);
+        order.setMerchantIncome(merchantIncome);
+        
         Order savedOrder = orderRepository.save(order);
+        
+        // 将商家实际收入（扣除平台抽成后）存入店铺余额
+        BigDecimal currentBalance = restaurant.getBalance() != null ? restaurant.getBalance() : BigDecimal.ZERO;
+        restaurant.setBalance(currentBalance.add(merchantIncome));
+        restaurantRepository.save(restaurant);
         
         // 推送订单状态更新消息给用户
         webSocketService.sendOrderStatusUpdate(savedOrder, oldStatus);
@@ -171,6 +215,22 @@ public class OrderService {
         webSocketService.sendNewOrderNotification(savedOrder);
         
         return toDTO(savedOrder);
+    }
+    
+    /**
+     * 获取店铺的平台抽成比例
+     * 优先使用店铺自定义的抽成比例，如果没有则使用系统默认值
+     */
+    private BigDecimal getPlatformRate(Restaurant restaurant) {
+        // 优先使用店铺自定义抽成比例
+        if (restaurant.getPlatformRate() != null) {
+            return restaurant.getPlatformRate();
+        }
+        
+        // 使用系统默认抽成比例
+        return systemConfigRepository.findByConfigKey(SystemConfig.KEY_DEFAULT_PLATFORM_RATE)
+                .map(SystemConfig::getValueAsBigDecimal)
+                .orElse(FALLBACK_PLATFORM_RATE);
     }
     
     /**
@@ -227,6 +287,9 @@ public class OrderService {
         dto.setDeliveryFee(order.getDeliveryFee());
         dto.setDiscountAmount(order.getDiscountAmount());
         dto.setPayAmount(order.getPayAmount());
+        dto.setPlatformFee(order.getPlatformFee());
+        dto.setPlatformRate(order.getPlatformRate());
+        dto.setMerchantIncome(order.getMerchantIncome());
         dto.setStatus(order.getStatus().name());
         dto.setAddress(order.getAddress());
         dto.setPhone(order.getPhone());

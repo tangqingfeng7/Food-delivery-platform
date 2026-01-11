@@ -10,6 +10,7 @@ export interface User {
   avatar: string
   address: string
   role: UserRole
+  balance: number
   createdAt: string
 }
 
@@ -66,6 +67,9 @@ export interface Restaurant {
   categoryId: number
   categoryName: string
   tags: string[]
+  balance: number
+  platformRate: number  // 平台抽成比例（如 0.08 表示 8%）
+  platformRatePercent: number  // 平台抽成百分比（如 8 表示 8%）
   createdAt: string
 }
 
@@ -126,6 +130,9 @@ export interface Order {
   deliveryFee: number
   discountAmount: number
   payAmount: number
+  platformFee: number  // 平台抽成金额
+  platformRate: number  // 平台抽成比例
+  merchantIncome: number  // 商家实际收入
   status: OrderStatus
   address: string
   phone: string
@@ -234,9 +241,15 @@ export interface ReviewStats {
 // 商家统计数据类型
 export interface MerchantStatistics {
   todayOrders: number
-  todayRevenue: number
+  todayRevenue: number  // 今日营业额
+  todayIncome: number   // 今日实际收入（扣除平台抽成后）
+  todayPlatformFee: number  // 今日平台抽成
   totalOrders: number
-  totalRevenue: number
+  totalRevenue: number  // 总营业额
+  totalIncome: number   // 实际总收入（扣除平台抽成后）
+  totalPlatformFee: number  // 累计平台抽成
+  platformRate: number  // 当前平台抽成比例
+  platformRatePercent: number  // 当前平台抽成百分比
   pendingOrders: number
   paidOrders: number
   preparingOrders: number

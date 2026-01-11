@@ -49,6 +49,15 @@ public class Order {
     @Column(name = "pay_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal payAmount;
 
+    @Column(name = "platform_fee", precision = 10, scale = 2)
+    private BigDecimal platformFee = BigDecimal.ZERO;  // 平台抽成金额
+
+    @Column(name = "platform_rate", precision = 5, scale = 4)
+    private BigDecimal platformRate;  // 平台抽成比例（如 0.08 表示 8%）
+
+    @Column(name = "merchant_income", precision = 10, scale = 2)
+    private BigDecimal merchantIncome = BigDecimal.ZERO;  // 商家实际收入（扣除平台抽成后）
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private OrderStatus status = OrderStatus.PENDING;

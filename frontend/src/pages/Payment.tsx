@@ -48,11 +48,11 @@ const paymentOptions: PaymentOption[] = [
 
 const Payment = () => {
   const navigate = useNavigate()
-  const { isLoggedIn } = useUserStore()
+  const { isLoggedIn, user } = useUserStore()
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>('wechat')
 
-  // 模拟用户余额
-  const userBalance = 0.00
+  // 用户余额
+  const userBalance = user?.balance || 0
 
   const handleSelectPayment = (method: PaymentMethod) => {
     setSelectedPayment(method)

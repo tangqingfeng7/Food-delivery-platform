@@ -13,5 +13,6 @@ public class CategoryDTO {
     private String name;
     private String icon;
     private String color;
+    private Integer sortOrder;
     private Long restaurantCount;
 }

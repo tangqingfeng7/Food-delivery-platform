@@ -146,3 +146,21 @@ export const completeMerchantOrder = (id: number) => {
 export const getMerchantStatistics = () => {
   return request.get<ApiResponse<MerchantStatistics>>('/merchant/statistics')
 }
+
+// ==================== 余额与提现 ====================
+
+// 获取店铺余额
+export const getMerchantBalance = () => {
+  return request.get<ApiResponse<{ balance: number }>>('/merchant/balance')
+}
+
+// 店铺提现（预留接口）
+export const withdrawBalance = (data: {
+  amount: number
+  withdrawMethod?: 'bank' | 'wechat' | 'alipay'
+  bankAccount?: string
+  bankName?: string
+  accountName?: string
+}) => {
+  return request.post<ApiResponse<{ withdrawAmount: number; remainingBalance: number }>>('/merchant/withdraw', data)
+}

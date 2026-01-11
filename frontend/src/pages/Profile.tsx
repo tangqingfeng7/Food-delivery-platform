@@ -16,12 +16,14 @@ import { Address } from '../types'
 
 const Profile = () => {
   const navigate = useNavigate()
-  const { user, isLoggedIn, logout } = useUserStore()
+  const { user, isLoggedIn, logout, refreshUser } = useUserStore()
   const [defaultAddress, setDefaultAddress] = useState<Address | null>(null)
   const [unreadNotificationCount, setUnreadNotificationCount] = useState<number>(0)
 
   useEffect(() => {
     if (isLoggedIn) {
+      // 刷新用户信息（获取最新余额等数据）
+      refreshUser()
       fetchDefaultAddress()
       fetchUnreadNotificationCount()
     }
@@ -62,7 +64,7 @@ const Profile = () => {
       items: [
         { icon: CreditCard, label: '支付方式', path: '/payment', badge: '' },
         { icon: Bell, label: '消息通知', path: '/notifications', badge: unreadNotificationCount > 0 ? String(unreadNotificationCount) : '' },
-        { icon: Shield, label: '账号安全', path: '/security', badge: '' },
+        { icon: Shield, label: '账号安全', path: '/account-security', badge: '' },
       ],
     },
     {
@@ -163,7 +165,7 @@ const Profile = () => {
                 <p className="text-orange-100 text-sm">积分</p>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold">0.00</p>
+                <p className="text-2xl font-bold">{user?.balance?.toFixed(2) || '0.00'}</p>
                 <p className="text-orange-100 text-sm">余额</p>
               </div>
             </div>

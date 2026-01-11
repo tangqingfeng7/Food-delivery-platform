@@ -8,6 +8,7 @@ import Card from '../components/ui/Card'
 import { useCartStore } from '../store/useCartStore'
 import { useUserStore } from '../store/useUserStore'
 import { createOrder } from '../api/order'
+import { getCurrentUser } from '../api/user'
 import { getRestaurantById } from '../api/restaurant'
 import { getImageUrl } from '../api/upload'
 import { createPayment, PaymentMethod } from '../api/payment'
@@ -33,7 +34,7 @@ const Cart = () => {
     getTotalPrice, 
     getCartByRestaurant 
   } = useCartStore()
-  const { user, isLoggedIn } = useUserStore()
+  const { user, isLoggedIn, setUser } = useUserStore()
   
   const [loading, setLoading] = useState(false)
   const [restaurantDetails, setRestaurantDetails] = useState<Map<number, Restaurant>>(new Map())
@@ -43,8 +44,8 @@ const Cart = () => {
   const [expandedDelivery, setExpandedDelivery] = useState<Set<number>>(new Set())
   // 支付方式
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('wechat')
-  // 模拟用户余额
-  const userBalance = 0.00
+  // 用户余额
+  const userBalance = user?.balance || 0
 
   const restaurantCarts = getCartByRestaurant()
   const totalPrice = getTotalPrice()
@@ -238,18 +239,30 @@ const Cart = () => {
         })
       )
 
-      // 获取创建的订单ID（假设返回的是订单对象）
-      const orderIds = orderResults.map(res => res.data?.data?.id || 0)
+      // 获取创建的订单ID
+      const orderIds = orderResults.map(res => res.data?.data?.id || 0).filter(id => id > 0)
       
-      // 调用支付接口
-      const paymentResult = await createPayment({
-        orderId: orderIds[0], // 主订单ID
-        amount: finalPrice,
-        paymentMethod: paymentMethod,
-      })
+      // 对每个订单调用支付接口
+      for (const orderId of orderIds) {
+        const paymentResult = await createPayment({
+          orderId: orderId,
+          amount: finalPrice / orderIds.length,
+          paymentMethod: paymentMethod,
+        })
 
-      if (!paymentResult.success) {
-        throw new Error(paymentResult.message || '支付失败')
+        if (!paymentResult.success) {
+          throw new Error(paymentResult.message || '支付失败')
+        }
+      }
+
+      // 刷新用户信息以更新余额
+      try {
+        const userRes = await getCurrentUser()
+        if (userRes.data?.data) {
+          setUser(userRes.data.data)
+        }
+      } catch (e) {
+        console.error('刷新用户信息失败:', e)
       }
 
       clearCart()

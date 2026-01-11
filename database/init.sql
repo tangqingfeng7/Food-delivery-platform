@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
     address VARCHAR(500),
     enabled BOOLEAN DEFAULT TRUE,
     role VARCHAR(20) DEFAULT 'USER',
+    balance DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT '账户余额',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -53,6 +54,8 @@ CREATE TABLE IF NOT EXISTS restaurants (
     category_id BIGINT,
     owner_id BIGINT COMMENT '店铺所有者ID',
     tags VARCHAR(500),
+    balance DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT '店铺余额',
+    platform_rate DECIMAL(5,4) DEFAULT 0.0800 COMMENT '平台抽成比例，默认8%',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (category_id) REFERENCES categories(id),
@@ -99,6 +102,9 @@ CREATE TABLE IF NOT EXISTS orders (
     delivery_fee DECIMAL(10,2) DEFAULT 0,
     discount_amount DECIMAL(10,2) DEFAULT 0,
     pay_amount DECIMAL(10,2) NOT NULL,
+    platform_fee DECIMAL(10,2) DEFAULT 0.00 COMMENT '平台抽成金额',
+    platform_rate DECIMAL(5,4) COMMENT '平台抽成比例',
+    merchant_income DECIMAL(10,2) DEFAULT 0.00 COMMENT '商家实际收入',
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     address VARCHAR(500),
     phone VARCHAR(20),
@@ -216,3 +222,17 @@ CREATE INDEX idx_reviews_user ON reviews(user_id);
 CREATE INDEX idx_reviews_order ON reviews(order_id);
 CREATE INDEX idx_review_likes_review ON review_likes(review_id);
 CREATE INDEX idx_review_likes_user ON review_likes(user_id);
+
+-- 系统配置表
+CREATE TABLE IF NOT EXISTS system_config (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    config_key VARCHAR(50) NOT NULL UNIQUE COMMENT '配置键',
+    config_value VARCHAR(255) NOT NULL COMMENT '配置值',
+    config_desc VARCHAR(255) COMMENT '配置描述',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 插入默认平台抽成配置（8%）
+INSERT INTO system_config (config_key, config_value, config_desc) 
+VALUES ('default_platform_rate', '0.08', '默认平台抽成比例')
+ON DUPLICATE KEY UPDATE config_value = config_value;

@@ -3,21 +3,21 @@ USE takeaway_db;
 
 -- 插入测试用户 (密码: 123456, BCrypt加密后)
 -- BCrypt hash for "123456": $2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK
-INSERT INTO users (username, password, phone, email, address, role) VALUES
-('张三', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13800138001', 'zhangsan@example.com', '北京市朝阳区建国路88号', 'USER'),
-('李四', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13800138002', 'lisi@example.com', '北京市海淀区中关村大街1号', 'USER'),
-('王五', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13800138003', 'wangwu@example.com', '上海市浦东新区陆家嘴环路1000号', 'USER');
+INSERT INTO users (username, password, phone, email, address, role, balance) VALUES
+('张三', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13800138001', 'zhangsan@example.com', '北京市朝阳区建国路88号', 'USER', 100.00),
+('李四', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13800138002', 'lisi@example.com', '北京市海淀区中关村大街1号', 'USER', 50.00),
+('王五', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13800138003', 'wangwu@example.com', '上海市浦东新区陆家嘴环路1000号', 'USER', 200.00);
 
 -- 插入店铺商家用户 (密码: 123456)
-INSERT INTO users (username, password, phone, email, role) VALUES
-('老北京炸酱面馆管理员', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13900000001', 'shop1@example.com', 'MERCHANT'),
-('川香阁麻辣烫管理员', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13900000002', 'shop2@example.com', 'MERCHANT'),
-('日式拉面屋管理员', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13900000003', 'shop3@example.com', 'MERCHANT'),
-('粤式茶餐厅管理员', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13900000004', 'shop4@example.com', 'MERCHANT'),
-('意大利披萨屋管理员', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13900000005', 'shop5@example.com', 'MERCHANT'),
-('韩式炸鸡店管理员', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13900000006', 'shop6@example.com', 'MERCHANT'),
-('麦香园包子铺管理员', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13900000007', 'shop7@example.com', 'MERCHANT'),
-('星巴克咖啡管理员', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13900000008', 'shop8@example.com', 'MERCHANT');
+INSERT INTO users (username, password, phone, email, role, balance) VALUES
+('老北京炸酱面馆管理员', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13900000001', 'shop1@example.com', 'MERCHANT', 0.00),
+('川香阁麻辣烫管理员', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13900000002', 'shop2@example.com', 'MERCHANT', 0.00),
+('日式拉面屋管理员', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13900000003', 'shop3@example.com', 'MERCHANT', 0.00),
+('粤式茶餐厅管理员', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13900000004', 'shop4@example.com', 'MERCHANT', 0.00),
+('意大利披萨屋管理员', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13900000005', 'shop5@example.com', 'MERCHANT', 0.00),
+('韩式炸鸡店管理员', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13900000006', 'shop6@example.com', 'MERCHANT', 0.00),
+('麦香园包子铺管理员', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13900000007', 'shop7@example.com', 'MERCHANT', 0.00),
+('星巴克咖啡管理员', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13900000008', 'shop8@example.com', 'MERCHANT', 0.00);
 
 -- 插入分类
 INSERT INTO categories (name, icon, color, sort_order) VALUES
@@ -201,5 +201,10 @@ INSERT INTO notifications (user_id, title, content, type, is_read, related_id) V
 (2, '欢迎使用美食速递', '感谢您注册美食速递，祝您用餐愉快！', 'SYSTEM', FALSE, NULL),
 (2, '周末特惠', '周末下单享8折优惠，仅限本周六日！', 'PROMO', FALSE, NULL),
 (3, '欢迎使用美食速递', '感谢您注册美食速递，祝您用餐愉快！', 'SYSTEM', TRUE, NULL);
+
+-- 插入管理员账号 (密码: 123456, BCrypt加密后)
+-- 使用与测试用户相同的密码便于测试
+INSERT INTO users (username, password, phone, email, role) VALUES
+('admin', '$2a$10$e/eoVA/H1C7VpY3e44u3pukUaX4cln6vKgYDHzNiJWi7bGot2QVqK', '13800000000', 'admin@example.com', 'ADMIN');
 
 SELECT '数据初始化完成！' AS message;

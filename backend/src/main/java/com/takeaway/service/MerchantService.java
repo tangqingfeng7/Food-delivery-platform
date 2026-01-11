@@ -3,6 +3,7 @@ package com.takeaway.service;
 import com.takeaway.dto.*;
 import com.takeaway.dto.request.*;
 import com.takeaway.entity.*;
+import com.takeaway.entity.SystemConfig;
 import com.takeaway.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -31,11 +33,22 @@ public class MerchantService {
     private final MenuItemRepository menuItemRepository;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
+    private final SystemConfigRepository systemConfigRepository;
     private final NotificationService notificationService;
     private final WebSocketService webSocketService;
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final BigDecimal FALLBACK_PLATFORM_RATE = BigDecimal.valueOf(0.08);  // 兜底默认值
+
+    /**
+     * 获取默认平台抽成比例（从系统配置表读取）
+     */
+    private BigDecimal getDefaultPlatformRate() {
+        return systemConfigRepository.findByConfigKey(SystemConfig.KEY_DEFAULT_PLATFORM_RATE)
+                .map(SystemConfig::getValueAsBigDecimal)
+                .orElse(FALLBACK_PLATFORM_RATE);
+    }
 
     // ==================== 店铺管理 ====================
 
@@ -556,11 +569,26 @@ public class MerchantService {
         dto.setTodayOrders(orderRepository.countTodayOrdersByRestaurantId(restaurantId));
         BigDecimal todayRevenue = orderRepository.sumTodayPayAmountByRestaurantId(restaurantId);
         dto.setTodayRevenue(todayRevenue != null ? todayRevenue : BigDecimal.ZERO);
+        
+        // 今日实际收入（扣除平台抽成后）
+        BigDecimal todayIncome = orderRepository.sumTodayMerchantIncomeByRestaurantId(restaurantId);
+        dto.setTodayIncome(todayIncome != null ? todayIncome : BigDecimal.ZERO);
+        dto.setTodayPlatformFee(dto.getTodayRevenue().subtract(dto.getTodayIncome()));
 
         // 总计统计
         dto.setTotalOrders(orderRepository.countByRestaurantId(restaurantId));
         BigDecimal totalRevenue = orderRepository.sumPayAmountByRestaurantId(restaurantId);
         dto.setTotalRevenue(totalRevenue != null ? totalRevenue : BigDecimal.ZERO);
+        
+        // 实际总收入（扣除平台抽成后）
+        BigDecimal totalIncome = orderRepository.sumMerchantIncomeByRestaurantId(restaurantId);
+        dto.setTotalIncome(totalIncome != null ? totalIncome : BigDecimal.ZERO);
+        dto.setTotalPlatformFee(dto.getTotalRevenue().subtract(dto.getTotalIncome()));
+
+        // 平台抽成比例（优先使用餐厅设置，否则使用系统默认配置）
+        BigDecimal rate = restaurant.getPlatformRate() != null ? restaurant.getPlatformRate() : getDefaultPlatformRate();
+        dto.setPlatformRate(rate);
+        dto.setPlatformRatePercent(rate.multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP));
 
         // 订单状态统计
         dto.setPendingOrders(orderRepository.countByRestaurantIdAndStatus(restaurantId, Order.OrderStatus.PENDING));
@@ -575,6 +603,50 @@ public class MerchantService {
         dto.setAvailableMenuItems(allItems.stream().filter(MenuItem::getIsAvailable).count());
 
         return dto;
+    }
+
+    // ==================== 余额与提现 ====================
+
+    /**
+     * 获取店铺余额
+     */
+    public BigDecimal getBalance(Long ownerId) {
+        Restaurant restaurant = restaurantRepository.findByOwnerId(ownerId)
+                .orElseThrow(() -> new RuntimeException("店铺不存在"));
+        return restaurant.getBalance() != null ? restaurant.getBalance() : BigDecimal.ZERO;
+    }
+
+    /**
+     * 店铺提现（预留接口）
+     * @param ownerId 店铺所有者ID
+     * @param amount 提现金额
+     * @return 提现后的余额
+     */
+    @Transactional
+    public BigDecimal withdraw(Long ownerId, BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("提现金额必须大于0");
+        }
+
+        Restaurant restaurant = restaurantRepository.findByOwnerId(ownerId)
+                .orElseThrow(() -> new RuntimeException("店铺不存在"));
+
+        BigDecimal currentBalance = restaurant.getBalance() != null ? restaurant.getBalance() : BigDecimal.ZERO;
+        
+        if (currentBalance.compareTo(amount) < 0) {
+            throw new RuntimeException("余额不足，当前余额: " + currentBalance + "，提现金额: " + amount);
+        }
+
+        // 扣除余额
+        restaurant.setBalance(currentBalance.subtract(amount));
+        restaurantRepository.save(restaurant);
+
+        // TODO: 这里预留真实提现逻辑
+        // 1. 记录提现流水
+        // 2. 调用第三方支付接口进行转账
+        // 3. 发送提现通知
+
+        return restaurant.getBalance();
     }
 
     // ==================== DTO转换 ====================
@@ -612,6 +684,11 @@ public class MerchantService {
             dto.setTags(Collections.emptyList());
         }
 
+        dto.setBalance(restaurant.getBalance());
+        // 平台抽成比例（优先使用餐厅设置，否则使用系统默认配置）
+        BigDecimal rate = restaurant.getPlatformRate() != null ? restaurant.getPlatformRate() : getDefaultPlatformRate();
+        dto.setPlatformRate(rate);
+        dto.setPlatformRatePercent(rate.multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP));
         dto.setCreatedAt(restaurant.getCreatedAt() != null ? restaurant.getCreatedAt().format(DATETIME_FORMATTER) : null);
         return dto;
     }
@@ -660,6 +737,9 @@ public class MerchantService {
         dto.setDeliveryFee(order.getDeliveryFee());
         dto.setDiscountAmount(order.getDiscountAmount());
         dto.setPayAmount(order.getPayAmount());
+        dto.setPlatformFee(order.getPlatformFee());
+        dto.setPlatformRate(order.getPlatformRate());
+        dto.setMerchantIncome(order.getMerchantIncome());
         dto.setStatus(order.getStatus().name());
         dto.setAddress(order.getAddress());
         dto.setPhone(order.getPhone());

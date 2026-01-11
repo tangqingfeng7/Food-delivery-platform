@@ -77,9 +77,10 @@ public class OrderController {
     }
 
     @PutMapping("/{id}/pay")
-    public ApiResponse<OrderDTO> payOrder(@PathVariable Long id) {
+    public ApiResponse<OrderDTO> payOrder(@PathVariable Long id,
+                                          @RequestParam(required = false, defaultValue = "wechat") String paymentMethod) {
         try {
-            OrderDTO order = orderService.payOrder(id);
+            OrderDTO order = orderService.payOrder(id, paymentMethod);
             return ApiResponse.success("支付成功", order);
         } catch (Exception e) {
             return ApiResponse.error(400, e.getMessage());

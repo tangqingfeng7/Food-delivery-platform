@@ -90,6 +90,12 @@ public class Restaurant {
     @Column(length = 500)
     private String tags;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal balance = BigDecimal.ZERO;
+
+    @Column(name = "platform_rate", precision = 5, scale = 4)
+    private BigDecimal platformRate;  // 平台抽成比例，null 表示使用系统默认配置
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

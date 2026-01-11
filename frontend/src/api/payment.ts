@@ -1,26 +1,4 @@
-/**
- * ============================================
- * TODO: 支付接口 - 待接入真实支付服务
- * ============================================
- * 
- * 当前状态: 模拟支付（开发测试用）
- * 
- * 待接入:
- * - [ ] 微信支付 (createWechatPayment)
- * - [ ] 支付宝支付 (createAlipayPayment)  
- * - [ ] 余额支付 (createBalancePayment)
- * - [ ] 支付状态查询 (getPaymentStatus)
- * - [ ] 用户余额查询 (getUserBalance)
- * - [ ] 余额充值 (rechargeBalance)
- * 
- * 接入步骤:
- * 1. 取消下方 request 导入的注释
- * 2. 替换各函数中的模拟代码为真实 API 调用
- * 3. 配置后端支付相关接口
- * ============================================
- */
-
-// import request from './request'  // TODO: 真实接入时取消注释
+import request from './request'
 
 // 支付方式类型
 export type PaymentMethod = 'wechat' | 'alipay' | 'balance'
@@ -61,76 +39,127 @@ export interface PaymentStatusResponse {
 /**
  * 创建微信支付订单
  * @description 调用后端接口获取微信支付参数，用于唤起微信支付
+ * TODO: 接入真实的微信支付接口
+ * 示例: const wechatRes = await request.post('/payment/wechat/create', data)
  */
-export const createWechatPayment = async (_data: PaymentRequest): Promise<PaymentResponse> => {
-  // TODO: 接入真实的微信支付接口
-  // 示例: return request.post('/api/payment/wechat/create', data)
-  
-  // 模拟支付成功
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
+export const createWechatPayment = async (data: PaymentRequest): Promise<PaymentResponse> => {
+  try {
+    // TODO: 这里应该先调用微信支付接口获取支付参数，用户支付成功后再更新订单状态
+    // 目前模拟支付成功，直接更新订单状态
+    await new Promise(resolve => setTimeout(resolve, 1500)) // 模拟支付延迟
+    
+    // 调用后端更新订单状态为已支付
+    const res = await request.put(`/orders/${data.orderId}/pay?paymentMethod=${data.paymentMethod}`)
+    if (res.data.code === 200) {
+      return {
         success: true,
         transactionId: `WX${Date.now()}`,
         message: '微信支付成功',
-      })
-    }, 1500)
-  })
+      }
+    } else {
+      return {
+        success: false,
+        message: res.data.message || '支付失败',
+      }
+    }
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : '支付失败'
+    return {
+      success: false,
+      message: errorMessage,
+    }
+  }
 }
 
 /**
  * 创建支付宝支付订单
  * @description 调用后端接口获取支付宝支付参数
+ * TODO: 接入真实的支付宝支付接口
+ * 示例: const alipayRes = await request.post('/payment/alipay/create', data)
  */
-export const createAlipayPayment = async (_data: PaymentRequest): Promise<PaymentResponse> => {
-  // TODO: 接入真实的支付宝支付接口
-  // 示例: return request.post('/api/payment/alipay/create', data)
-  
-  // 模拟支付成功
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
+export const createAlipayPayment = async (data: PaymentRequest): Promise<PaymentResponse> => {
+  try {
+    // TODO: 这里应该先调用支付宝接口获取支付参数，用户支付成功后再更新订单状态
+    // 目前模拟支付成功，直接更新订单状态
+    await new Promise(resolve => setTimeout(resolve, 1500)) // 模拟支付延迟
+    
+    // 调用后端更新订单状态为已支付
+    const res = await request.put(`/orders/${data.orderId}/pay?paymentMethod=${data.paymentMethod}`)
+    if (res.data.code === 200) {
+      return {
         success: true,
         transactionId: `ALI${Date.now()}`,
         message: '支付宝支付成功',
-      })
-    }, 1500)
-  })
+      }
+    } else {
+      return {
+        success: false,
+        message: res.data.message || '支付失败',
+      }
+    }
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : '支付失败'
+    return {
+      success: false,
+      message: errorMessage,
+    }
+  }
+}
+
+/**
+ * 余额支付（真实接口）
+ * @description 调用后端余额支付接口，扣除用户余额
+ */
+export const createRealBalancePayment = async (data: PaymentRequest): Promise<PaymentResponse> => {
+  try {
+    const res = await request.put(`/orders/${data.orderId}/pay?paymentMethod=${data.paymentMethod}`)
+    if (res.data.code === 200) {
+      return {
+        success: true,
+        transactionId: `BAL${Date.now()}`,
+        remainingBalance: res.data.data?.user?.balance,
+        message: res.data.message || '余额支付成功',
+      }
+    } else {
+      return {
+        success: false,
+        message: res.data.message || '支付失败',
+      }
+    }
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : '支付失败'
+    return {
+      success: false,
+      message: errorMessage,
+    }
+  }
 }
 
 /**
  * 余额支付
- * @description 使用账户余额支付
+ * @description 使用账户余额支付，调用后端真实接口
  */
-export const createBalancePayment = async (_data: PaymentRequest): Promise<PaymentResponse> => {
-  // TODO: 接入真实的余额支付接口
-  // 示例: return request.post('/api/payment/balance/pay', data)
-  
-  // 模拟支付成功
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        success: true,
-        transactionId: `BAL${Date.now()}`,
-        remainingBalance: 0,
-        message: '余额支付成功',
-      })
-    }, 1000)
-  })
+export const createBalancePayment = async (data: PaymentRequest): Promise<PaymentResponse> => {
+  return createRealBalancePayment(data)
 }
 
 /**
  * 统一支付接口
  * @description 根据支付方式调用对应的支付接口
+ * - 微信/支付宝: 预留模拟接口，待接入真实支付
+ * - 余额支付: 调用真实后端 API
  */
 export const createPayment = async (data: PaymentRequest): Promise<PaymentResponse> => {
   switch (data.paymentMethod) {
     case 'wechat':
+      // 微信支付 - 模拟（预留真实接口）
       return createWechatPayment(data)
     case 'alipay':
+      // 支付宝支付 - 模拟（预留真实接口）
       return createAlipayPayment(data)
     case 'balance':
-      return createBalancePayment(data)
+      // 余额支付 - 调用真实后端 API
+      return createRealBalancePayment(data)
     default:
       throw new Error('不支持的支付方式')
   }
@@ -160,17 +189,11 @@ export const getPaymentStatus = async (orderId: number): Promise<PaymentStatusRe
 
 /**
  * 获取用户余额
- * @description 获取当前用户的账户余额
+ * @description 获取当前用户的账户余额（通过 /api/users/me 接口）
  */
 export const getUserBalance = async (): Promise<{ balance: number }> => {
-  // TODO: 接入真实的余额查询接口
-  // 示例: return request.get('/api/user/balance')
-  
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ balance: 0 })
-    }, 300)
-  })
+  const res = await request.get('/api/users/me')
+  return { balance: res.data.data?.balance || 0 }
 }
 
 /**

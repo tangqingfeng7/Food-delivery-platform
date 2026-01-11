@@ -46,6 +46,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/upload/**").authenticated()
                         // 商家接口需要 MERCHANT 角色
                         .requestMatchers("/api/merchant/**").hasRole("MERCHANT")
+                        // 管理后台接口需要 ADMIN 角色
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // 需要认证的接口（必须在 permitAll 之前配置）
                         .requestMatchers("/api/notifications/**").authenticated()
                         .requestMatchers("/api/orders/**").authenticated()

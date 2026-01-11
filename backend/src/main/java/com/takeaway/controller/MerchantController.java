@@ -272,4 +272,52 @@ public class MerchantController {
             return ApiResponse.error(400, e.getMessage());
         }
     }
+
+    // ==================== 余额与提现 ====================
+
+    /**
+     * 获取店铺余额
+     */
+    @GetMapping("/balance")
+    public ApiResponse<Map<String, Object>> getBalance(@AuthenticationPrincipal User user) {
+        try {
+            java.math.BigDecimal balance = merchantService.getBalance(user.getId());
+            Map<String, Object> result = new java.util.HashMap<>();
+            result.put("balance", balance);
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            return ApiResponse.error(400, e.getMessage());
+        }
+    }
+
+    /**
+     * 店铺提现（预留接口）
+     */
+    @PostMapping("/withdraw")
+    public ApiResponse<Map<String, Object>> withdraw(
+            @AuthenticationPrincipal User user,
+            @RequestBody Map<String, Object> request) {
+        try {
+            Object amountObj = request.get("amount");
+            if (amountObj == null) {
+                return ApiResponse.error(400, "请指定提现金额");
+            }
+            
+            java.math.BigDecimal amount;
+            if (amountObj instanceof Number) {
+                amount = new java.math.BigDecimal(amountObj.toString());
+            } else {
+                amount = new java.math.BigDecimal((String) amountObj);
+            }
+            
+            java.math.BigDecimal remainingBalance = merchantService.withdraw(user.getId(), amount);
+            
+            Map<String, Object> result = new java.util.HashMap<>();
+            result.put("withdrawAmount", amount);
+            result.put("remainingBalance", remainingBalance);
+            return ApiResponse.success("提现申请成功", result);
+        } catch (Exception e) {
+            return ApiResponse.error(400, e.getMessage());
+        }
+    }
 }

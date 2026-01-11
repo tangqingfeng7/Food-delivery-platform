@@ -16,6 +16,7 @@ import Notifications from './pages/Notifications'
 import Help from './pages/Help'
 import About from './pages/About'
 import Settings from './pages/Settings'
+import AccountSecurity from './pages/AccountSecurity'
 import Payment from './pages/Payment'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -56,6 +57,7 @@ function App() {
             <Route path="help" element={<Help />} />
             <Route path="about" element={<About />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="account-security" element={<AccountSecurity />} />
             <Route path="payment" element={<Payment />} />
           </Route>
           <Route path="/login" element={<Login />} />

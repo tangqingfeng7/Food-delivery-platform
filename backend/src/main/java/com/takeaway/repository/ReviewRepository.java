@@ -53,4 +53,18 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     // 计算包含该菜品的评价平均分
     @Query("SELECT AVG(r.overallRating) FROM Review r JOIN r.order.items oi WHERE oi.menuItem.id = :menuItemId")
     java.math.BigDecimal calculateAverageRatingByMenuItemId(@Param("menuItemId") Long menuItemId);
+    
+    // 管理后台查询方法
+    
+    // 统计今日新增评价
+    @Query("SELECT COUNT(r) FROM Review r WHERE DATE(r.createdAt) = CURRENT_DATE")
+    long countTodayCreated();
+    
+    // 所有评价分页（按创建时间倒序）
+    @Query("SELECT r FROM Review r ORDER BY r.createdAt DESC")
+    Page<Review> findAllOrderByCreatedAtDesc(Pageable pageable);
+    
+    // 搜索评价（按内容）
+    @Query("SELECT r FROM Review r WHERE r.content LIKE %:keyword% ORDER BY r.createdAt DESC")
+    Page<Review> searchByContent(@Param("keyword") String keyword, Pageable pageable);
 }

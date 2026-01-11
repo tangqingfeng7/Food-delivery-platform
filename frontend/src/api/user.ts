@@ -34,3 +34,35 @@ export const updateAddress = (address: string) => {
 export const logout = () => {
   return request.post<ApiResponse<null>>('/auth/logout')
 }
+
+// ==================== 账号安全相关接口 ====================
+
+// 修改密码
+export const changePassword = (data: {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}) => {
+  return request.put<ApiResponse<null>>('/users/me/password', data)
+}
+
+// 修改手机号
+export const changePhone = (data: {
+  password: string
+  newPhone: string
+}) => {
+  return request.put<ApiResponse<User>>('/users/me/phone', data)
+}
+
+// 注销账号
+export const deleteAccount = (data: {
+  password: string
+  reason?: string
+}) => {
+  return request.delete<ApiResponse<null>>('/users/me', { data })
+}
+
+// 验证密码
+export const verifyPassword = (password: string) => {
+  return request.post<ApiResponse<boolean>>('/users/me/verify-password', { password })
+}

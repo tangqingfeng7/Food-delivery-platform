@@ -36,4 +36,17 @@ public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
     Optional<Restaurant> findByOwnerId(Long ownerId);
 
     boolean existsByOwnerId(Long ownerId);
+    
+    // 管理后台查询方法
+    
+    // 统计营业中的餐厅数量
+    long countByIsOpenTrue();
+    
+    // 统计今日新增餐厅
+    @Query("SELECT COUNT(r) FROM Restaurant r WHERE DATE(r.createdAt) = CURRENT_DATE")
+    long countTodayCreated();
+    
+    // 所有餐厅分页（按创建时间倒序）
+    @Query("SELECT r FROM Restaurant r ORDER BY r.createdAt DESC")
+    Page<Restaurant> findAllOrderByCreatedAtDesc(Pageable pageable);
 }
