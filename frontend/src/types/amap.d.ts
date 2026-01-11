@@ -1,5 +1,7 @@
 // 高德地图类型定义
 declare namespace AMap {
+  // 插件加载方法
+  function plugin(plugins: string | string[], callback: () => void): void
   class Map {
     constructor(container: HTMLElement | string, opts?: MapOptions)
     getCenter(): LngLat

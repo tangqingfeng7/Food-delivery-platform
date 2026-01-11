@@ -6,12 +6,12 @@ import {
   Store,
   UtensilsCrossed,
   ClipboardList,
+  MessageSquare,
   LogOut,
   Menu,
   X,
   ChevronLeft,
   Bell,
-  User,
 } from 'lucide-react'
 import { useUserStore } from '../store/useUserStore'
 
@@ -43,6 +43,7 @@ const MerchantLayout = () => {
     { path: '/merchant/shop', label: '店铺管理', icon: Store },
     { path: '/merchant/menu', label: '菜品管理', icon: UtensilsCrossed },
     { path: '/merchant/orders', label: '订单管理', icon: ClipboardList },
+    { path: '/merchant/reviews', label: '评价管理', icon: MessageSquare },
   ]
 
   const isActive = (path: string, exact?: boolean) => {
@@ -65,7 +66,7 @@ const MerchantLayout = () => {
         className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:flex-col bg-white border-r border-gray-200 z-30"
       >
         {/* Logo */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+        <div className={`flex items-center h-16 px-4 border-b border-gray-200 ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
           <AnimatePresence mode="wait">
             {sidebarOpen ? (
               <motion.div
@@ -86,18 +87,21 @@ const MerchantLayout = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center mx-auto"
+                className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center cursor-pointer"
+                onClick={() => setSidebarOpen(true)}
               >
                 <Store className="w-5 h-5 text-white" />
               </motion.div>
             )}
           </AnimatePresence>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
-          >
-            <ChevronLeft className={`w-5 h-5 transition-transform ${!sidebarOpen ? 'rotate-180' : ''}`} />
-          </button>
+          {sidebarOpen && (
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
         {/* 导航菜单 */}
@@ -113,7 +117,7 @@ const MerchantLayout = () => {
                   active
                     ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30'
                     : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600'
-                }`}
+                } ${!sidebarOpen ? 'justify-center' : ''}`}
               >
                 <Icon className="w-5 h-5 flex-shrink-0" />
                 <AnimatePresence>
@@ -136,7 +140,7 @@ const MerchantLayout = () => {
         {/* 用户信息和退出 */}
         <div className="p-3 border-t border-gray-200">
           <AnimatePresence>
-            {sidebarOpen && (
+            {sidebarOpen ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -149,6 +153,17 @@ const MerchantLayout = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-800 truncate">{user?.username}</p>
                   <p className="text-xs text-gray-500">商家账号</p>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex justify-center py-2 mb-2"
+              >
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-medium">
+                  {user?.username?.charAt(0) || 'M'}
                 </div>
               </motion.div>
             )}

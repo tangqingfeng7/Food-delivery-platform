@@ -1,10 +1,23 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { AMAP_KEY, AMAP_SECURITY_CODE } from '../config/map'
+
+// 声明 AMap 全局类型
+declare global {
+  interface Window {
+    AMap: typeof AMap
+    _AMapSecurityConfig: {
+      securityJsCode: string
+    }
+  }
+}
 
 interface LocationState {
   // 用户当前位置
   latitude: number | null
   longitude: number | null
+  // 地址名称
+  address: string | null
   // 位置是否已获取
   isLocated: boolean
   // 是否正在获取位置
@@ -15,7 +28,9 @@ interface LocationState {
   lastUpdated: number | null
   
   // 设置位置
-  setLocation: (latitude: number, longitude: number) => void
+  setLocation: (latitude: number, longitude: number, address?: string) => void
+  // 设置地址
+  setAddress: (address: string) => void
   // 设置加载状态
   setLocating: (isLocating: boolean) => void
   // 设置错误
@@ -31,20 +46,26 @@ export const useLocationStore = create<LocationState>()(
     (set, get) => ({
       latitude: null,
       longitude: null,
+      address: null,
       isLocated: false,
       isLocating: false,
       error: null,
       lastUpdated: null,
 
-      setLocation: (latitude: number, longitude: number) => {
+      setLocation: (latitude: number, longitude: number, address?: string) => {
         set({
           latitude,
           longitude,
+          address: address || null,
           isLocated: true,
           isLocating: false,
           error: null,
           lastUpdated: Date.now(),
         })
+      },
+
+      setAddress: (address: string) => {
+        set({ address })
       },
 
       setLocating: (isLocating: boolean) => {
@@ -89,6 +110,51 @@ export const useLocationStore = create<LocationState>()(
 
         set({ isLocating: true, error: null })
 
+        // 加载高德地图 SDK
+        const loadAMapScript = (): Promise<void> => {
+          return new Promise((resolve, reject) => {
+            if (window.AMap) {
+              resolve()
+              return
+            }
+            
+            // 设置安全密钥
+            if (AMAP_SECURITY_CODE) {
+              window._AMapSecurityConfig = {
+                securityJsCode: AMAP_SECURITY_CODE
+              }
+            }
+            
+            const script = document.createElement('script')
+            script.src = `https://webapi.amap.com/maps?v=2.0&key=${AMAP_KEY}&plugin=AMap.Geocoder`
+            script.onload = () => resolve()
+            script.onerror = () => reject(new Error('加载地图失败'))
+            document.head.appendChild(script)
+          })
+        }
+
+        // 逆地理编码获取地址
+        const getAddressFromCoords = async (lat: number, lng: number): Promise<string | null> => {
+          try {
+            await loadAMapScript()
+            return new Promise((resolve) => {
+              const geocoder = new window.AMap.Geocoder()
+              geocoder.getAddress(
+                new window.AMap.LngLat(lng, lat),
+                (status: string, result: AMap.Geocoder.ReGeocodeResult) => {
+                  if (status === 'complete' && result.regeocode) {
+                    resolve(result.regeocode.formattedAddress)
+                  } else {
+                    resolve(null)
+                  }
+                }
+              )
+            })
+          } catch {
+            return null
+          }
+        }
+
         return new Promise((resolve) => {
           if (!navigator.geolocation) {
             set({ 
@@ -100,11 +166,16 @@ export const useLocationStore = create<LocationState>()(
           }
 
           navigator.geolocation.getCurrentPosition(
-            (position) => {
+            async (position) => {
               const { latitude, longitude } = position.coords
+              
+              // 获取地址
+              const address = await getAddressFromCoords(latitude, longitude)
+              
               set({
                 latitude,
                 longitude,
+                address,
                 isLocated: true,
                 isLocating: false,
                 error: null,
@@ -141,6 +212,7 @@ export const useLocationStore = create<LocationState>()(
         set({
           latitude: null,
           longitude: null,
+          address: null,
           isLocated: false,
           isLocating: false,
           error: null,
@@ -153,6 +225,7 @@ export const useLocationStore = create<LocationState>()(
       partialize: (state) => ({
         latitude: state.latitude,
         longitude: state.longitude,
+        address: state.address,
         isLocated: state.isLocated,
         lastUpdated: state.lastUpdated,
       }),

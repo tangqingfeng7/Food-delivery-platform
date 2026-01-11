@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Home, ShoppingCart, User, Menu, X, UtensilsCrossed, LogIn, LogOut, ClipboardList } from 'lucide-react'
 import { useUserStore } from '../store/useUserStore'
 import { useCartStore } from '../store/useCartStore'
+import { getImageUrl } from '../api/upload'
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -117,8 +118,12 @@ const Navbar = () => {
                   }}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-gray-600 hover:bg-orange-50 hover:text-orange-600 transition-all"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-sm font-medium">
-                    {user?.username?.charAt(0) || 'U'}
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-sm font-medium overflow-hidden">
+                    {user?.avatar ? (
+                      <img src={getImageUrl(user.avatar)} alt={user.username} className="w-full h-full object-cover" />
+                    ) : (
+                      user?.username?.charAt(0) || 'U'
+                    )}
                   </div>
                   <span className="font-medium max-w-[80px] truncate">{user?.username}</span>
                 </motion.button>
@@ -244,8 +249,12 @@ const Navbar = () => {
                         onClick={() => setIsMobileMenuOpen(false)}
                         className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-orange-50"
                       >
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-sm font-medium">
-                          {user?.username?.charAt(0) || 'U'}
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-sm font-medium overflow-hidden">
+                          {user?.avatar ? (
+                            <img src={getImageUrl(user.avatar)} alt={user.username} className="w-full h-full object-cover" />
+                          ) : (
+                            user?.username?.charAt(0) || 'U'
+                          )}
                         </div>
                         <span className="font-medium">{user?.username}</span>
                       </Link>

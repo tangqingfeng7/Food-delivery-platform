@@ -31,7 +31,7 @@ const Orders = () => {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<string>('all')
   const [isPolling, setIsPolling] = useState(true)
-  const { addItem, clearCart } = useCartStore()
+  const { addItem } = useCartStore()
   const { user } = useUserStore()
   const { connect, disconnect, subscribeToUserOrders, status: wsStatus } = useWebSocketStore()
 
@@ -205,19 +205,6 @@ const Orders = () => {
   }
 
   const handleReorder = async (order: Order) => {
-    const confirmed = await confirm({
-      type: 'info',
-      title: '再来一单',
-      message: '将清空当前购物车并添加该订单的商品，确定继续吗？',
-      confirmText: '确定',
-      cancelText: '取消',
-    })
-    
-    if (!confirmed) return
-    
-    // 清空购物车
-    clearCart()
-    
     // 将订单商品添加到购物车
     order.items.forEach(item => {
       // 将 OrderItem 转换为 MenuItem 格式
@@ -243,10 +230,10 @@ const Orders = () => {
       }
     })
     
-    toast.success('已添加到购物车', '即将跳转到餐厅')
+    toast.success('已添加到购物车', '即将跳转到购物车')
     
-    // 跳转到餐厅详情页
-    navigate(`/restaurant/${order.restaurantId}`)
+    // 跳转到购物车页面
+    navigate('/cart')
   }
 
   const formatDate = (dateString: string) => {

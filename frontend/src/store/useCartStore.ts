@@ -2,10 +2,17 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { CartItem, MenuItem } from '../types'
 
+// 按店铺分组的购物车数据
+export interface RestaurantCart {
+  restaurantId: number
+  restaurantName: string
+  items: CartItem[]
+  totalPrice: number
+  totalCount: number
+}
+
 interface CartState {
   items: CartItem[]
-  restaurantId: number | null
-  restaurantName: string | null
   
   // 添加到购物车
   addItem: (item: MenuItem, restaurantId: number, restaurantName: string) => void
@@ -15,40 +22,30 @@ interface CartState {
   deleteItem: (menuItemId: number) => void
   // 清空购物车
   clearCart: () => void
+  // 清空指定店铺的购物车
+  clearRestaurantCart: (restaurantId: number) => void
   // 获取某个商品的数量
   getItemQuantity: (menuItemId: number) => number
   // 获取总数量
   getTotalCount: () => number
   // 获取总价格
   getTotalPrice: () => number
+  // 按店铺分组获取购物车
+  getCartByRestaurant: () => RestaurantCart[]
+  // 获取指定店铺的商品
+  getRestaurantItems: (restaurantId: number) => CartItem[]
+  // 获取指定店铺的总价
+  getRestaurantTotalPrice: (restaurantId: number) => number
 }
 
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
-      restaurantId: null,
-      restaurantName: null,
 
       addItem: (menuItem: MenuItem, restaurantId: number, restaurantName: string) => {
-        const { items, restaurantId: currentRestaurantId } = get()
+        const { items } = get()
         
-        // 如果是不同餐厅的商品，需要清空购物车
-        if (currentRestaurantId && currentRestaurantId !== restaurantId) {
-          set({
-            items: [{
-              id: Date.now(),
-              menuItem,
-              quantity: 1,
-              restaurantId,
-              restaurantName,
-            }],
-            restaurantId,
-            restaurantName,
-          })
-          return
-        }
-
         const existingItem = items.find(item => item.menuItem.id === menuItem.id)
         
         if (existingItem) {
@@ -68,8 +65,6 @@ export const useCartStore = create<CartState>()(
               restaurantId,
               restaurantName,
             }],
-            restaurantId,
-            restaurantName,
           })
         }
       },
@@ -87,30 +82,27 @@ export const useCartStore = create<CartState>()(
             ),
           })
         } else {
-          const newItems = items.filter(item => item.menuItem.id !== menuItemId)
           set({
-            items: newItems,
-            restaurantId: newItems.length > 0 ? get().restaurantId : null,
-            restaurantName: newItems.length > 0 ? get().restaurantName : null,
+            items: items.filter(item => item.menuItem.id !== menuItemId),
           })
         }
       },
 
       deleteItem: (menuItemId: number) => {
         const { items } = get()
-        const newItems = items.filter(item => item.menuItem.id !== menuItemId)
         set({
-          items: newItems,
-          restaurantId: newItems.length > 0 ? get().restaurantId : null,
-          restaurantName: newItems.length > 0 ? get().restaurantName : null,
+          items: items.filter(item => item.menuItem.id !== menuItemId),
         })
       },
 
       clearCart: () => {
+        set({ items: [] })
+      },
+
+      clearRestaurantCart: (restaurantId: number) => {
+        const { items } = get()
         set({
-          items: [],
-          restaurantId: null,
-          restaurantName: null,
+          items: items.filter(item => item.restaurantId !== restaurantId),
         })
       },
 
@@ -128,6 +120,40 @@ export const useCartStore = create<CartState>()(
           (total, item) => total + item.menuItem.price * item.quantity,
           0
         )
+      },
+
+      getCartByRestaurant: () => {
+        const { items } = get()
+        const restaurantMap = new Map<number, RestaurantCart>()
+        
+        items.forEach(item => {
+          const existing = restaurantMap.get(item.restaurantId)
+          if (existing) {
+            existing.items.push(item)
+            existing.totalPrice += item.menuItem.price * item.quantity
+            existing.totalCount += item.quantity
+          } else {
+            restaurantMap.set(item.restaurantId, {
+              restaurantId: item.restaurantId,
+              restaurantName: item.restaurantName,
+              items: [item],
+              totalPrice: item.menuItem.price * item.quantity,
+              totalCount: item.quantity,
+            })
+          }
+        })
+        
+        return Array.from(restaurantMap.values())
+      },
+
+      getRestaurantItems: (restaurantId: number) => {
+        return get().items.filter(item => item.restaurantId === restaurantId)
+      },
+
+      getRestaurantTotalPrice: (restaurantId: number) => {
+        return get().items
+          .filter(item => item.restaurantId === restaurantId)
+          .reduce((total, item) => total + item.menuItem.price * item.quantity, 0)
       },
     }),
     {

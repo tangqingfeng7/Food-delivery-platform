@@ -12,7 +12,6 @@ import { getImageUrl } from '../api/upload'
 import { useCartStore } from '../store/useCartStore'
 import { useUserStore } from '../store/useUserStore'
 import { useLocationStore, calculateDistance } from '../store/useLocationStore'
-import { confirm } from '../store/useConfirmStore'
 import { toast } from '../store/useToastStore'
 import { Restaurant, MenuItem, MenuCategory } from '../types'
 
@@ -41,8 +40,7 @@ const RestaurantDetail = () => {
     removeItem, 
     getItemQuantity, 
     getTotalCount, 
-    getTotalPrice,
-    restaurantId: cartRestaurantId 
+    getTotalPrice 
   } = useCartStore()
 
   // 获取用户位置
@@ -158,23 +156,9 @@ const RestaurantDetail = () => {
     }
   }
 
-  const handleAddToCart = async (item: MenuItem) => {
+  const handleAddToCart = (item: MenuItem) => {
     if (restaurant) {
-      // 如果购物车中有其他餐厅的商品，提示用户
-      if (cartRestaurantId && cartRestaurantId !== restaurant.id) {
-        const confirmed = await confirm({
-          type: 'warning',
-          title: '切换餐厅',
-          message: '购物车中有其他餐厅的商品，是否清空并添加新商品？',
-          confirmText: '清空并添加',
-          cancelText: '取消',
-        })
-        if (confirmed) {
-          addItem(item, restaurant.id, restaurant.name)
-        }
-      } else {
-        addItem(item, restaurant.id, restaurant.name)
-      }
+      addItem(item, restaurant.id, restaurant.name)
     }
   }
 

@@ -11,6 +11,7 @@ import { useUserStore } from '../store/useUserStore'
 import { confirm } from '../store/useConfirmStore'
 import { getAddresses } from '../api/address'
 import { getUnreadCount } from '../api/notification'
+import { getImageUrl } from '../api/upload'
 import { Address } from '../types'
 
 const Profile = () => {
@@ -129,7 +130,7 @@ const Profile = () => {
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
                 {user?.avatar ? (
-                  <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
+                  <img src={getImageUrl(user.avatar)} alt={user.username} className="w-full h-full object-cover" />
                 ) : (
                   <User className="w-10 h-10 text-white" />
                 )}

@@ -27,12 +27,13 @@ const Home = () => {
   const [featuredRestaurants, setFeaturedRestaurants] = useState<Restaurant[]>([])
   const [loading, setLoading] = useState(true)
   const [searchKeyword, setSearchKeyword] = useState('')
-  const [address, setAddress] = useState('')
 
   // 获取用户位置
   const { 
     latitude: userLat, 
     longitude: userLng, 
+    address,
+    isLocating,
     getCurrentPosition 
   } = useLocationStore()
 
@@ -153,15 +154,14 @@ const Home = () => {
             >
               <div className="p-4 rounded-2xl glass shadow-xl shadow-orange-500/10">
                 <div className="flex flex-col md:flex-row gap-3">
-                  <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl bg-white/80 border border-gray-100">
-                    <MapPin className="w-5 h-5 text-orange-500 flex-shrink-0" />
-                    <input
-                      type="text"
-                      placeholder="输入您的配送地址"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      className="flex-1 bg-transparent outline-none text-gray-700 placeholder-gray-400 min-w-0"
-                    />
+                  <div 
+                    className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl bg-white/80 border border-gray-100 cursor-pointer hover:border-orange-300 transition-colors min-w-0 overflow-hidden"
+                    onClick={() => !isLocating && getCurrentPosition()}
+                  >
+                    <MapPin className={`w-5 h-5 flex-shrink-0 ${isLocating ? 'text-gray-400 animate-pulse' : 'text-orange-500'}`} />
+                    <span className={`truncate ${address ? 'text-gray-700' : 'text-gray-400'}`}>
+                      {isLocating ? '正在获取位置...' : (address || '点击获取当前位置')}
+                    </span>
                   </div>
                   <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl bg-white/80 border border-gray-100">
                     <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Search, Filter, Star, Clock, MapPin, ChevronDown, Loader2 } from 'lucide-react'
@@ -8,6 +8,7 @@ import { getCategories } from '../api/category'
 import { getImageUrl } from '../api/upload'
 import { useLocationStore } from '../store/useLocationStore'
 import { Restaurant, Category } from '../types'
+import { AMAP_KEY, AMAP_SECURITY_CODE } from '../config/map'
 
 const RestaurantList = () => {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -28,13 +29,58 @@ const RestaurantList = () => {
   const { 
     latitude: userLat, 
     longitude: userLng, 
+    address: userAddress,
     isLocated,
-    getCurrentPosition 
+    getCurrentPosition,
+    setAddress 
   } = useLocationStore()
+
+  // 反向地理编码获取地址
+  const reverseGeocode = useCallback((lng: number, lat: number) => {
+    // 设置安全密钥
+    if (AMAP_SECURITY_CODE) {
+      (window as unknown as { _AMapSecurityConfig: { securityJsCode: string } })._AMapSecurityConfig = {
+        securityJsCode: AMAP_SECURITY_CODE,
+      }
+    }
+
+    const doGeocode = () => {
+      window.AMap.plugin('AMap.Geocoder', () => {
+        const geocoder = new window.AMap.Geocoder()
+        geocoder.getAddress(new window.AMap.LngLat(lng, lat), (status: string, result: AMap.Geocoder.ReGeocodeResult) => {
+          if (status === 'complete' && result.regeocode) {
+            const addressComponent = result.regeocode.addressComponent
+            // 优先显示更精确的地址
+            const streetInfo = addressComponent.streetNumber
+            const shortAddress = addressComponent.district + 
+              (addressComponent.township || '') + 
+              (streetInfo?.street || '') +
+              (streetInfo?.number || '')
+            setAddress(shortAddress || result.regeocode.formattedAddress)
+          }
+        })
+      })
+    }
+    
+    // 检查是否已加载
+    if (window.AMap) {
+      doGeocode()
+    } else {
+      // 加载高德地图 API
+      const script = document.createElement('script')
+      script.src = `https://webapi.amap.com/maps?v=2.0&key=${AMAP_KEY}`
+      script.onload = () => doGeocode()
+      document.head.appendChild(script)
+    }
+  }, [setAddress])
 
   // 获取用户位置
   useEffect(() => {
-    getCurrentPosition()
+    getCurrentPosition().then((pos) => {
+      if (pos && !userAddress) {
+        reverseGeocode(pos.longitude, pos.latitude)
+      }
+    })
   }, [])
 
   useEffect(() => {
@@ -118,7 +164,7 @@ const RestaurantList = () => {
           <div className="flex items-center gap-2 text-gray-600">
             <MapPin className="w-4 h-4 text-orange-500" />
             {isLocated ? (
-              <span>已定位 (经度: {userLng?.toFixed(4)}, 纬度: {userLat?.toFixed(4)})</span>
+              <span>{userAddress || '已定位'}</span>
             ) : (
               <span className="text-gray-400">正在获取位置...</span>
             )}

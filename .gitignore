@@ -35,3 +35,6 @@ Thumbs.db
 # 项目配置和测试文件
 .cursorrules
 test.png
+
+# 上传文件目录
+backend/uploads/

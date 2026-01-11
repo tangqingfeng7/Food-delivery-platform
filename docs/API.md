@@ -301,7 +301,32 @@ Authorization: Bearer <token>
 ```json
 {
   "username": "张三三",
-  "email": "zhangsan@example.com"
+  "email": "zhangsan@example.com",
+  "avatar": "/uploads/8b9cb63e-f763-477c-9872-28b22b91c36c.png"
+}
+```
+
+**说明**
+
+- 头像上传流程：先调用 `/upload/image` 接口上传图片获取 URL，再调用此接口更新用户头像
+- 所有参数均为可选，只需传入需要更新的字段
+
+**响应示例**
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "username": "张三三",
+    "phone": "13800138001",
+    "email": "zhangsan@example.com",
+    "avatar": "/uploads/8b9cb63e-f763-477c-9872-28b22b91c36c.png",
+    "address": "北京市朝阳区建国路88号",
+    "role": "USER",
+    "createdAt": "2024-01-01 12:00:00"
+  }
 }
 ```
 

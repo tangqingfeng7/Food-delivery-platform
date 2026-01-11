@@ -54,8 +54,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/**").authenticated()
                         // 其他 GET 请求公开
                         .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
-                        // Swagger
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // Swagger/OpenAPI
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/v3/api-docs.yaml", "/swagger-resources/**", "/webjars/**").permitAll()
                         // 其他接口需要认证
                         .anyRequest().authenticated()
                 )

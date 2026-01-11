@@ -113,6 +113,15 @@ public class OrderService {
 
         String oldStatus = order.getStatus().name();
         order.setStatus(Order.OrderStatus.CANCELLED);
+        
+        // 回退销量
+        for (OrderItem item : order.getItems()) {
+            MenuItem menuItem = item.getMenuItem();
+            int newSales = menuItem.getSales() - item.getQuantity();
+            menuItem.setSales(Math.max(0, newSales)); // 确保销量不会小于0
+            menuItemRepository.save(menuItem);
+        }
+        
         Order savedOrder = orderRepository.save(order);
         
         // 推送订单状态更新消息
@@ -174,6 +183,17 @@ public class OrderService {
         
         String oldStatus = order.getStatus().name();
         Order.OrderStatus newStatus = Order.OrderStatus.valueOf(status);
+        
+        // 如果是取消订单，回退销量
+        if (newStatus == Order.OrderStatus.CANCELLED && order.getStatus() != Order.OrderStatus.CANCELLED) {
+            for (OrderItem item : order.getItems()) {
+                MenuItem menuItem = item.getMenuItem();
+                int newSales = menuItem.getSales() - item.getQuantity();
+                menuItem.setSales(Math.max(0, newSales)); // 确保销量不会小于0
+                menuItemRepository.save(menuItem);
+            }
+        }
+        
         order.setStatus(newStatus);
         
         // 根据状态更新相关时间

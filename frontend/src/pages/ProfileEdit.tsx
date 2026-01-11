@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, User, Phone, MapPin, Mail, Camera, Loader2 } from 'lucide-react'
@@ -7,6 +7,8 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import { useUserStore } from '../store/useUserStore'
 import { toast } from '../store/useToastStore'
+import { uploadImage, getImageUrl } from '../api/upload'
+import { updateUser as updateUserApi } from '../api/user'
 
 const ProfileEdit = () => {
   const navigate = useNavigate()
@@ -20,6 +22,8 @@ const ProfileEdit = () => {
     avatar: '',
   })
   const [loading, setLoading] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -53,24 +57,63 @@ const ProfileEdit = () => {
 
     try {
       setLoading(true)
-      // 这里可以调用 API 更新用户信息
-      // await updateUserApi(formData)
-      
-      // 更新本地状态
-      updateUser(formData)
-      toast.success('保存成功', '个人资料已更新')
-      navigate(-1)
-    } catch (error) {
+      // 调用 API 更新用户信息
+      const response = await updateUserApi(formData)
+      if (response.data.code === 200) {
+        // 更新本地状态
+        updateUser(response.data.data)
+        toast.success('保存成功', '个人资料已更新')
+        navigate(-1)
+      } else {
+        toast.error('保存失败', response.data.message)
+      }
+    } catch (error: any) {
       console.error('更新失败:', error)
-      toast.error('保存失败', '请稍后重试')
+      toast.error('保存失败', error.response?.data?.message || '请稍后重试')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleAvatarChange = () => {
-    // 实际项目中这里应该调用文件选择器和上传 API
-    toast.info('功能开发中', '头像上传功能即将上线')
+  // 点击头像触发文件选择
+  const handleAvatarClick = () => {
+    if (!avatarUploading) {
+      avatarInputRef.current?.click()
+    }
+  }
+
+  // 处理头像文件选择
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // 验证文件类型
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('格式错误', '仅支持 JPG、PNG、GIF、WebP 格式')
+      return
+    }
+
+    // 验证文件大小 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('文件过大', '头像大小不能超过 5MB')
+      return
+    }
+
+    try {
+      setAvatarUploading(true)
+      const url = await uploadImage(file)
+      setFormData(prev => ({ ...prev, avatar: url }))
+      toast.success('头像上传成功')
+    } catch (error: any) {
+      toast.error('上传失败', error.message || '请稍后重试')
+    } finally {
+      setAvatarUploading(false)
+      // 清空 input 以便可以重复选择同一文件
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = ''
+      }
+    }
   }
 
   if (!isLoggedIn) {
@@ -103,11 +146,24 @@ const ProfileEdit = () => {
         >
           <Card className="p-6 mb-6">
             <div className="flex flex-col items-center">
+              {/* 隐藏的文件输入框 */}
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                onChange={handleAvatarFileChange}
+                className="hidden"
+              />
               <div className="relative">
-                <div className="w-24 h-24 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden">
-                  {formData.avatar ? (
+                <div 
+                  onClick={handleAvatarClick}
+                  className={`w-24 h-24 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden cursor-pointer transition-all hover:ring-4 hover:ring-orange-200 ${avatarUploading ? 'cursor-wait' : ''}`}
+                >
+                  {avatarUploading ? (
+                    <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+                  ) : formData.avatar ? (
                     <img 
-                      src={formData.avatar} 
+                      src={getImageUrl(formData.avatar)} 
                       alt="头像" 
                       className="w-full h-full object-cover"
                     />
@@ -116,13 +172,16 @@ const ProfileEdit = () => {
                   )}
                 </div>
                 <button
-                  onClick={handleAvatarChange}
-                  className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center shadow-lg hover:bg-orange-600 transition-colors"
+                  onClick={handleAvatarClick}
+                  disabled={avatarUploading}
+                  className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center shadow-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
                 >
                   <Camera className="w-4 h-4" />
                 </button>
               </div>
-              <p className="mt-3 text-sm text-gray-500">点击更换头像</p>
+              <p className="mt-3 text-sm text-gray-500">
+                {avatarUploading ? '上传中...' : '点击更换头像'}
+              </p>
             </div>
           </Card>
         </motion.div>

@@ -16,6 +16,7 @@ import Notifications from './pages/Notifications'
 import Help from './pages/Help'
 import About from './pages/About'
 import Settings from './pages/Settings'
+import Payment from './pages/Payment'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import ToastContainer from './components/ui/Toast'
@@ -29,6 +30,7 @@ import MerchantDashboard from './pages/merchant/MerchantDashboard'
 import MerchantShop from './pages/merchant/MerchantShop'
 import MerchantMenu from './pages/merchant/MerchantMenu'
 import MerchantOrders from './pages/merchant/MerchantOrders'
+import MerchantReviews from './pages/merchant/MerchantReviews'
 
 function App() {
   return (
@@ -54,6 +56,7 @@ function App() {
             <Route path="help" element={<Help />} />
             <Route path="about" element={<About />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="payment" element={<Payment />} />
           </Route>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -66,6 +69,7 @@ function App() {
             <Route path="shop" element={<MerchantShop />} />
             <Route path="menu" element={<MerchantMenu />} />
             <Route path="orders" element={<MerchantOrders />} />
+            <Route path="reviews" element={<MerchantReviews />} />
           </Route>
         </Routes>
       </AnimatePresence>

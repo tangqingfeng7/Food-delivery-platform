@@ -24,7 +24,6 @@ import { getMenuItemReviews, getMenuItemReviewStats, likeReview, unlikeReview } 
 import { getImageUrl } from '../api/upload'
 import { useCartStore } from '../store/useCartStore'
 import { useUserStore } from '../store/useUserStore'
-import { confirm } from '../store/useConfirmStore'
 import { toast } from '../store/useToastStore'
 import type { MenuItem, Restaurant, Review, PageResponse } from '../types'
 
@@ -47,8 +46,7 @@ const MenuItemDetail = () => {
     removeItem,
     getItemQuantity,
     getTotalCount,
-    getTotalPrice,
-    restaurantId: cartRestaurantId
+    getTotalPrice
   } = useCartStore()
 
   useEffect(() => {
@@ -143,23 +141,9 @@ const MenuItemDetail = () => {
     }
   }
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = () => {
     if (!menuItem || !restaurant) return
-
-    if (cartRestaurantId && cartRestaurantId !== restaurant.id) {
-      const confirmed = await confirm({
-        type: 'warning',
-        title: '切换餐厅',
-        message: '购物车中有其他餐厅的商品，是否清空并添加新商品？',
-        confirmText: '清空并添加',
-        cancelText: '取消',
-      })
-      if (confirmed) {
-        addItem(menuItem, restaurant.id, restaurant.name)
-      }
-    } else {
-      addItem(menuItem, restaurant.id, restaurant.name)
-    }
+    addItem(menuItem, restaurant.id, restaurant.name)
   }
 
   const formatDate = (dateStr: string) => {
