@@ -4,6 +4,8 @@ import com.wechat.pay.java.core.Config;
 import com.wechat.pay.java.core.RSAAutoCertificateConfig;
 import com.wechat.pay.java.service.payments.nativepay.NativePayService;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +13,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * 微信支付配置类
  */
+@Slf4j
 @Data
 @Configuration
 @ConfigurationProperties(prefix = "wechat.pay")
@@ -57,10 +60,23 @@ public class WechatPayConfig {
     private String returnUrl;
 
     /**
+     * 判断微信支付是否已正确配置
+     */
+    public boolean isConfigured() {
+        return privateKey != null 
+            && !privateKey.contains("你的") 
+            && privateKey.contains("-----BEGIN PRIVATE KEY-----")
+            && merchantId != null 
+            && !merchantId.contains("你的");
+    }
+
+    /**
      * 创建微信支付配置
      */
     @Bean
-    public Config wechatPayConfig() {
+    @ConditionalOnProperty(prefix = "wechat.pay", name = "enabled", havingValue = "true", matchIfMissing = false)
+    public Config wechatPayApiConfig() {
+        log.info("初始化微信支付配置...");
         // 使用 RSAAutoCertificateConfig 自动下载微信平台证书
         return new RSAAutoCertificateConfig.Builder()
                 .merchantId(merchantId)
@@ -74,6 +90,7 @@ public class WechatPayConfig {
      * 创建 Native 支付服务（扫码支付）
      */
     @Bean
+    @ConditionalOnProperty(prefix = "wechat.pay", name = "enabled", havingValue = "true", matchIfMissing = false)
     public NativePayService nativePayService(Config config) {
         return new NativePayService.Builder().config(config).build();
     }

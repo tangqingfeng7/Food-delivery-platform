@@ -3,8 +3,8 @@ package com.takeaway.controller;
 import com.takeaway.dto.ApiResponse;
 import com.takeaway.service.AlipayService;
 import com.takeaway.service.WechatPayService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -16,11 +16,17 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/api/payment")
-@RequiredArgsConstructor
 public class PaymentController {
 
     private final AlipayService alipayService;
     private final WechatPayService wechatPayService;
+
+    @Autowired
+    public PaymentController(AlipayService alipayService,
+                             @Autowired(required = false) WechatPayService wechatPayService) {
+        this.alipayService = alipayService;
+        this.wechatPayService = wechatPayService;
+    }
 
     /**
      * 创建支付宝支付
@@ -76,6 +82,9 @@ public class PaymentController {
      */
     @PostMapping("/wechat/create/{orderId}")
     public ApiResponse<Map<String, String>> createWechatPayment(@PathVariable Long orderId) {
+        if (wechatPayService == null) {
+            return ApiResponse.error(503, "微信支付未配置，请在application.yml中配置wechat.pay相关参数并设置enabled=true");
+        }
         try {
             String codeUrl = wechatPayService.createNativePayment(orderId);
             
@@ -98,6 +107,9 @@ public class PaymentController {
      */
     @GetMapping("/wechat/query")
     public ApiResponse<Map<String, Object>> queryWechatPayment(@RequestParam String orderNo) {
+        if (wechatPayService == null) {
+            return ApiResponse.error(503, "微信支付未配置");
+        }
         try {
             String status = wechatPayService.queryAndUpdateOrder(orderNo);
             
@@ -122,6 +134,11 @@ public class PaymentController {
     @PostMapping("/wechat/notify")
     public Map<String, String> wechatPayNotify(@RequestBody String requestBody) {
         Map<String, String> response = new HashMap<>();
+        if (wechatPayService == null) {
+            response.put("code", "FAIL");
+            response.put("message", "微信支付未配置");
+            return response;
+        }
         try {
             // 注意：生产环境需要验证签名
             // 这里简化处理，实际应使用微信支付SDK的回调处理工具

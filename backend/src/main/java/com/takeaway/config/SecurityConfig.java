@@ -36,8 +36,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // WebSocket 端点
                         .requestMatchers("/ws/**").permitAll()
-                        // 静态资源（上传文件）
-                        .requestMatchers("/uploads/**").permitAll()
+                        // 静态资源（上传文件、favicon）
+                        .requestMatchers("/uploads/**", "/favicon.ico").permitAll()
                         // 公开接口
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/categories/**").permitAll()

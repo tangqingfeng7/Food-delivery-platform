@@ -61,6 +61,8 @@ alipay:
 # 微信支付配置
 wechat:
   pay:
+    # 是否启用微信支付（配置好真实凭证后改为true）
+    enabled: false
     # 商户号（从微信支付商户平台获取）
     merchant-id: 你的商户号
     # 商户API私钥（RSA私钥内容，不要泄露）
