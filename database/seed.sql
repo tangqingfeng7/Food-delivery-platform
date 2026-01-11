@@ -29,15 +29,16 @@ INSERT INTO categories (name, icon, color, sort_order) VALUES
 ('日韩料理', 'award', 'from-green-400 to-teal-500', 6);
 
 -- 插入餐厅数据（owner_id 关联商家用户，用户ID 4-11 对应店铺 1-8）
-INSERT INTO restaurants (name, description, image, logo, rating, review_count, delivery_time, delivery_fee, min_order, distance, address, phone, open_time, close_time, is_open, is_new, is_featured, category_id, owner_id, tags) VALUES
-('老北京炸酱面馆', '传承百年老北京风味，正宗炸酱面，地道京味小吃', 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800', 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=100', 4.8, 1256, '25-35', 3.00, 20.00, 1.2, '北京市朝阳区建国路88号', '010-88888001', '10:00:00', '22:00:00', TRUE, TRUE, TRUE, 4, 4, '面食,北京菜,老字号'),
-('川香阁麻辣烫', '正宗四川麻辣烫，麻辣鲜香，回味无穷', 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=800', 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=100', 4.6, 892, '30-40', 4.00, 25.00, 2.1, '北京市朝阳区三里屯路19号', '010-88888002', '11:00:00', '23:00:00', TRUE, FALSE, TRUE, 2, 5, '川菜,麻辣,火锅'),
-('日式拉面屋', '日本进口食材，传统手工拉面，浓郁豚骨汤底', 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?w=800', 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?w=100', 4.9, 2103, '20-30', 5.00, 30.00, 0.8, '北京市朝阳区望京西路50号', '010-88888003', '11:00:00', '22:00:00', TRUE, FALSE, TRUE, 6, 6, '日料,拉面,日式'),
-('粤式茶餐厅', '正宗广式茶点，新鲜食材，精心烹制', 'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=800', 'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=100', 4.7, 1567, '35-45', 4.00, 35.00, 1.5, '北京市朝阳区国贸大厦B1层', '010-88888004', '07:00:00', '21:00:00', TRUE, TRUE, TRUE, 4, 7, '粤菜,早茶,茶餐厅'),
-('意大利披萨屋', '纯正意式披萨，手工现做，薄脆可口', 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800', 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=100', 4.5, 756, '25-35', 6.00, 40.00, 2.3, '北京市朝阳区CBD中央商务区', '010-88888005', '11:00:00', '22:00:00', TRUE, FALSE, TRUE, 5, 8, '西餐,披萨,意大利'),
-('韩式炸鸡店', '韩式秘制炸鸡，外酥里嫩，配送韩式泡菜', 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=800', 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=100', 4.8, 1890, '20-30', 3.00, 28.00, 1.0, '北京市朝阳区望京SOHO', '010-88888006', '11:00:00', '23:59:59', TRUE, FALSE, TRUE, 6, 9, '韩餐,炸鸡,韩式'),
-('麦香园包子铺', '现蒸现卖，皮薄馅大，早餐首选', 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800', 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=100', 4.4, 567, '15-25', 2.00, 15.00, 0.5, '北京市朝阳区朝外大街甲6号', '010-88888007', '06:00:00', '14:00:00', TRUE, FALSE, FALSE, 1, 10, '快餐,早餐,包子'),
-('星巴克咖啡', '全球知名咖啡品牌，提供优质咖啡和轻食', 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800', 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=100', 4.6, 2345, '15-25', 0.00, 30.00, 0.3, '北京市朝阳区建国门外大街1号', '010-88888008', '07:00:00', '22:00:00', TRUE, FALSE, TRUE, 3, 11, '咖啡,饮品,甜品');
+-- 经纬度使用北京市朝阳区附近的坐标
+INSERT INTO restaurants (name, description, image, logo, rating, review_count, delivery_time, delivery_fee, min_order, distance, address, latitude, longitude, phone, open_time, close_time, is_open, is_new, is_featured, category_id, owner_id, tags) VALUES
+('老北京炸酱面馆', '传承百年老北京风味，正宗炸酱面，地道京味小吃', 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800', 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=100', 4.8, 0, '25-35', 3.00, 20.00, 0, '北京市朝阳区建国路88号', 39.9087, 116.4716, '010-88888001', '10:00:00', '22:00:00', TRUE, TRUE, TRUE, 4, 4, '面食,北京菜,老字号'),
+('川香阁麻辣烫', '正宗四川麻辣烫，麻辣鲜香，回味无穷', 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=800', 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=100', 4.6, 0, '30-40', 4.00, 25.00, 0, '北京市朝阳区三里屯路19号', 39.9339, 116.4545, '010-88888002', '11:00:00', '23:00:00', TRUE, FALSE, TRUE, 2, 5, '川菜,麻辣,火锅'),
+('日式拉面屋', '日本进口食材，传统手工拉面，浓郁豚骨汤底', 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?w=800', 'https://images.unsplash.com/photo-1557872943-16a5ac26437e?w=100', 4.9, 0, '20-30', 5.00, 30.00, 0, '北京市朝阳区望京西路50号', 39.9980, 116.4743, '010-88888003', '11:00:00', '22:00:00', TRUE, FALSE, TRUE, 6, 6, '日料,拉面,日式'),
+('粤式茶餐厅', '正宗广式茶点，新鲜食材，精心烹制', 'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=800', 'https://images.unsplash.com/photo-1496116218417-1a781b1c416c?w=100', 4.7, 0, '35-45', 4.00, 35.00, 0, '北京市朝阳区国贸大厦B1层', 39.9086, 116.4595, '010-88888004', '07:00:00', '21:00:00', TRUE, TRUE, TRUE, 4, 7, '粤菜,早茶,茶餐厅'),
+('意大利披萨屋', '纯正意式披萨，手工现做，薄脆可口', 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800', 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=100', 4.5, 0, '25-35', 6.00, 40.00, 0, '北京市朝阳区CBD中央商务区', 39.9052, 116.4608, '010-88888005', '11:00:00', '22:00:00', TRUE, FALSE, TRUE, 5, 8, '西餐,披萨,意大利'),
+('韩式炸鸡店', '韩式秘制炸鸡，外酥里嫩，配送韩式泡菜', 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=800', 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=100', 4.8, 0, '20-30', 3.00, 28.00, 0, '北京市朝阳区望京SOHO', 39.9956, 116.4797, '010-88888006', '11:00:00', '23:59:59', TRUE, FALSE, TRUE, 6, 9, '韩餐,炸鸡,韩式'),
+('麦香园包子铺', '现蒸现卖，皮薄馅大，早餐首选', 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800', 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=100', 4.4, 0, '15-25', 2.00, 15.00, 0, '北京市朝阳区朝外大街甲6号', 39.9223, 116.4430, '010-88888007', '06:00:00', '14:00:00', TRUE, FALSE, FALSE, 1, 10, '快餐,早餐,包子'),
+('星巴克咖啡', '全球知名咖啡品牌，提供优质咖啡和轻食', 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800', 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=100', 4.6, 0, '15-25', 0.00, 30.00, 0, '北京市朝阳区建国门外大街1号', 39.9101, 116.4430, '010-88888008', '07:00:00', '22:00:00', TRUE, FALSE, TRUE, 3, 11, '咖啡,饮品,甜品');
 
 -- 为餐厅1插入菜品分类
 INSERT INTO menu_categories (restaurant_id, name, sort_order) VALUES
@@ -186,10 +187,11 @@ INSERT INTO review_likes (review_id, user_id, created_at) VALUES
 (4, 3, '2026-01-04 22:00:00'),
 (7, 1, '2026-01-07 15:00:00');
 
--- 更新餐厅评分和评价数（根据实际评价数据）
-UPDATE restaurants SET rating = 4.9, review_count = 5 WHERE id = 3;
-UPDATE restaurants SET rating = 4.5, review_count = 2 WHERE id = 1;
-UPDATE restaurants SET rating = 5.0, review_count = 1 WHERE id = 6;
+-- 评价数量现在从 reviews 表实时统计，不再需要手动更新 review_count 字段
+-- 但仍需要根据实际评价更新餐厅评分
+UPDATE restaurants SET rating = 4.9 WHERE id = 3;
+UPDATE restaurants SET rating = 4.5 WHERE id = 1;
+UPDATE restaurants SET rating = 5.0 WHERE id = 6;
 
 -- 插入通知数据
 INSERT INTO notifications (user_id, title, content, type, is_read, related_id) VALUES

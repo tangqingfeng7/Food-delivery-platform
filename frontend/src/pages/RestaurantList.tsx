@@ -117,7 +117,11 @@ const RestaurantList = () => {
           </h1>
           <div className="flex items-center gap-2 text-gray-600">
             <MapPin className="w-4 h-4 text-orange-500" />
-            <span>北京市朝阳区科技园区</span>
+            {isLocated ? (
+              <span>已定位 (经度: {userLng?.toFixed(4)}, 纬度: {userLat?.toFixed(4)})</span>
+            ) : (
+              <span className="text-gray-400">正在获取位置...</span>
+            )}
           </div>
         </motion.div>
 

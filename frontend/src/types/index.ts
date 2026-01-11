@@ -29,9 +29,16 @@ export interface Address {
 // 收藏餐厅类型
 export interface Favorite {
   id: number
-  userId: number
   restaurantId: number
-  restaurant: Restaurant
+  restaurantName: string
+  restaurantImage: string
+  restaurantLogo: string
+  rating: number
+  reviewCount: number
+  deliveryTime: string
+  deliveryFee: number
+  minOrder: number
+  tags: string
   createdAt: string
 }
 

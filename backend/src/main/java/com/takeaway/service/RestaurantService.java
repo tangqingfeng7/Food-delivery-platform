@@ -9,6 +9,7 @@ import com.takeaway.entity.Restaurant;
 import com.takeaway.repository.MenuCategoryRepository;
 import com.takeaway.repository.MenuItemRepository;
 import com.takeaway.repository.RestaurantRepository;
+import com.takeaway.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -31,6 +32,7 @@ public class RestaurantService {
     private final RestaurantRepository restaurantRepository;
     private final MenuCategoryRepository menuCategoryRepository;
     private final MenuItemRepository menuItemRepository;
+    private final ReviewRepository reviewRepository;
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -98,7 +100,7 @@ public class RestaurantService {
      * 根据距离计算预计送达时间
      * 公式：当前时间 + 基础准备时间 + 距离 * 每公里配送时间
      * @param distance 距离（公里）
-     * @return 预计送达时间字符串，如 "12:30"
+     * @return 预计送达时间字符串，如 "15:30"
      */
     private String calculateDeliveryTime(double distance) {
         final int BASE_PREP_TIME = 15; // 基础准备时间（分钟）
@@ -182,8 +184,18 @@ public class RestaurantService {
         dto.setDescription(restaurant.getDescription());
         dto.setImage(restaurant.getImage());
         dto.setLogo(restaurant.getLogo());
-        dto.setRating(restaurant.getRating());
-        dto.setReviewCount(restaurant.getReviewCount());
+        
+        // 从评价表实时统计评价数量和评分
+        long reviewCount = reviewRepository.countByRestaurantId(restaurant.getId());
+        dto.setReviewCount((int) reviewCount);
+        
+        // 如果有评价，使用实际平均评分；否则使用默认评分 5.0
+        if (reviewCount > 0) {
+            BigDecimal avgRating = reviewRepository.calculateAverageRatingByRestaurantId(restaurant.getId());
+            dto.setRating(avgRating != null ? avgRating.setScale(1, RoundingMode.HALF_UP) : BigDecimal.valueOf(5.0));
+        } else {
+            dto.setRating(BigDecimal.valueOf(5.0));
+        }
         dto.setDeliveryTime(restaurant.getDeliveryTime());
         dto.setDeliveryFee(restaurant.getDeliveryFee());
         dto.setMinOrder(restaurant.getMinOrder());

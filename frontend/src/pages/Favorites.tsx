@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Heart, Star, Clock, MapPin, Loader2 } from 'lucide-react'
+import { ArrowLeft, Heart, Star, Clock, Loader2 } from 'lucide-react'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import { useUserStore } from '../store/useUserStore'
@@ -118,8 +118,8 @@ const Favorites = () => {
                 <Card className="p-4">
                   <div className="flex gap-4">
                     <img
-                      src={getImageUrl(favorite.restaurant.image)}
-                      alt={favorite.restaurant.name}
+                      src={getImageUrl(favorite.restaurantImage)}
+                      alt={favorite.restaurantName}
                       className="w-24 h-24 rounded-xl object-cover cursor-pointer"
                       onClick={() => navigate(`/restaurant/${favorite.restaurantId}`)}
                     />
@@ -129,8 +129,10 @@ const Favorites = () => {
                           className="cursor-pointer"
                           onClick={() => navigate(`/restaurant/${favorite.restaurantId}`)}
                         >
-                          <h3 className="font-semibold text-gray-800">{favorite.restaurant.name}</h3>
-                          <p className="text-sm text-gray-500">{favorite.restaurant.categoryName}</p>
+                          <h3 className="font-semibold text-gray-800">{favorite.restaurantName}</h3>
+                          {favorite.tags && (
+                            <p className="text-sm text-gray-500">{favorite.tags}</p>
+                          )}
                         </div>
                         <button
                           onClick={() => handleRemoveFavorite(favorite.restaurantId)}
@@ -142,15 +144,14 @@ const Favorites = () => {
                       <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                         <div className="flex items-center gap-1">
                           <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                          <span>{favorite.restaurant.rating}</span>
+                          <span>{favorite.rating}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
-                          <span>{favorite.restaurant.deliveryTime}送达</span>
+                          <span>{favorite.deliveryTime}送达</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4" />
-                          <span>{favorite.restaurant.distance}km</span>
+                          <span>起送￥{favorite.minOrder}</span>
                         </div>
                       </div>
                     </div>
