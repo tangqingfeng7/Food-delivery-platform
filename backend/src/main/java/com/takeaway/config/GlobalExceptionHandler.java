@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -50,6 +51,16 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.OK)
     public ApiResponse<Void> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
         return ApiResponse.error(400, "请求体格式错误或缺失");
+    }
+
+    /**
+     * 处理资源未找到异常
+     * 当请求的路径不存在时触发
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiResponse<Void> handleNoResourceFound(NoResourceFoundException ex) {
+        return ApiResponse.error(404, "请求的资源不存在: " + ex.getResourcePath());
     }
 
     /**
